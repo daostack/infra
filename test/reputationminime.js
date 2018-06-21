@@ -286,21 +286,22 @@ contract('Reputation', accounts => {
         await reputation.mint(accounts[1], rep1, { from: accounts[0] });
         assert.equal (await reputation.totalSupply(),rep1);
         var tx = await reputation.createCloneToken(0);
-        assert.equal(tx.logs[6].event,"NewCloneReputaionToken");
+        assert.equal(tx.logs[2].event,"NewCloneReputaionToken");
+
         var clonedReputationAddress = await getValueFromLogs(tx, "_cloneToken","NewCloneReputaionToken");
         var clonedReputation = await Reputation.at(clonedReputationAddress);
+
         assert.equal (await reputation.totalSupply(),rep1);
         var reputationOf1 = await clonedReputation.reputationOf(accounts[1]);
         assert.equal (await clonedReputation.totalSupply(),rep1);
         assert.equal(reputationOf1.toNumber(), rep1);
-        await clonedReputation.addAddressToWhitelist(accounts[0]);
-        await clonedReputation.mint(accounts[1],1);
-        assert.equal (await clonedReputation.totalSupply(),rep1+1);
-        assert.equal (await reputation.totalSupply(),rep1+1);
-        reputationOf1 = await reputation.reputationOf(accounts[1]);
-        assert.equal(reputationOf1.toNumber(), rep1 + 1);
-        reputationOf1 = await clonedReputation.reputationOf(accounts[1]);
-        assert.equal(reputationOf1.toNumber(), rep1 + 1);
+        await reputation.mint(accounts[1], rep1, { from: accounts[0] });
+
+        assert.equal(await clonedReputation.totalSupply(),rep1);
+        assert.equal(await reputation.totalSupply(),rep1+rep1);
+
+
+
 
     });
 

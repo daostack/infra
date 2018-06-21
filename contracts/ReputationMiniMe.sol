@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-//import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "openzeppelin-solidity/contracts/ownership/Whitelist.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+//import "openzeppelin-solidity/contracts/ownership/Whitelist.sol";
 
 
 /**
@@ -13,7 +13,7 @@ import "openzeppelin-solidity/contracts/ownership/Whitelist.sol";
  * It provides an onlyOwner functions to mint and burn reputation _to (or _from) a specific address.
  */
 
-contract ReputationMiniMe is Whitelist {
+contract ReputationMiniMe is Ownable {
 
 
       uint8 public decimals = 18;             //Number of decimals of the smallest unit
@@ -82,7 +82,7 @@ contract ReputationMiniMe is Whitelist {
           parentToken = ReputationMiniMe(_parentToken);
           parentSnapShotBlock = _parentSnapShotBlock;
           creationBlock = block.number;
-          addAddressToWhitelist(msg.sender);
+          //addAddressToWhitelist(msg.sender);
       }
 
 
@@ -184,7 +184,7 @@ contract ReputationMiniMe is Whitelist {
               );
 
           cloneToken.transferOwnership(msg.sender);
-          addAddressToWhitelist(address(cloneToken));
+          //addAddressToWhitelist(address(cloneToken));
           //cloneToken.transferOwnership(msg.sender);
 
           // An event to make the token easy to find on the blockchain
@@ -201,16 +201,13 @@ contract ReputationMiniMe is Whitelist {
       /// @param _amount The quantity of tokens generated
       /// @return True if the tokens are generated correctly
       function mint(address _owner, uint _amount
-      ) public onlyWhitelisted returns (bool) {
+      ) public onlyOwner returns (bool) {
           uint curTotalSupply = totalSupply();
           require(curTotalSupply + _amount >= curTotalSupply); // Check for overflow
           uint previousBalanceTo = balanceOf(_owner);
           require(previousBalanceTo + _amount >= previousBalanceTo); // Check for overflow
           updateValueAtNow(totalSupplyHistory, curTotalSupply + _amount);
           updateValueAtNow(balances[_owner], previousBalanceTo + _amount);
-          if (parentToken != address(0)) {
-             parentToken.mint(_owner,_amount);
-          }
           emit Mint(_owner, _amount);
           return true;
       }
@@ -220,7 +217,7 @@ contract ReputationMiniMe is Whitelist {
       /// @param _amount The quantity of tokens to burn
       /// @return True if the tokens are burned correctly
       function burn(address _owner, uint _amount
-      ) onlyWhitelisted public returns (bool) {
+      ) onlyOwner public returns (bool) {
           uint curTotalSupply = totalSupply();
           require(curTotalSupply >= _amount);
           uint previousBalanceFrom = balanceOf(_owner);
