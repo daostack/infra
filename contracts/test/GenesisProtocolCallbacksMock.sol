@@ -2,27 +2,31 @@ pragma solidity ^0.4.24;
 
 import "../VotingMachines/GenesisProtocolCallbacksInterface.sol";
 import "../VotingMachines/GenesisProtocol.sol";
-import "../Reputation.sol";
+import "../ReputationMiniMe.sol";
 
 
 contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
 
-    Reputation public reputation;
+    ReputationMiniMe public reputation;
     StandardToken public stakingToken;
     GenesisProtocol genesisProtocol;
+    mapping (bytes32=>address) reputations;
+
+    event NewProposal(bytes32 indexed _proposalId, address indexed _organization, uint _numOfChoices, address _proposer, bytes32 _paramsHash);
+
 
     /**
      * @dev Constructor
      */
-    constructor(Reputation _reputation,StandardToken _stakingToken,GenesisProtocol _genesisProtocol) public
+    constructor(ReputationMiniMe _reputation,StandardToken _stakingToken,GenesisProtocol _genesisProtocol) public
     {
         reputation = _reputation;
         stakingToken = _stakingToken;
         genesisProtocol = _genesisProtocol;
     }
 
-    function getTotalReputationSupply(bytes32 ) external returns(uint256) {
-        return reputation.totalSupply();
+    function getTotalReputationSupply(bytes32 _proposalId) external returns(uint256) {
+        return ReputationMiniMe(reputations[_proposalId]).totalSupply();
     }
 
     function mintReputation(uint _amount,address _beneficiary,bytes32) external returns(bool) {
@@ -33,8 +37,8 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
         return reputation.burn(_beneficiary,_amount);
     }
 
-    function reputationOf(address _owner,bytes32) external returns(uint) {
-        return reputation.reputationOf(_owner);
+    function reputationOf(address _owner,bytes32 _proposalId) external returns(uint) {
+        return ReputationMiniMe(reputations[_proposalId]).reputationOf(_owner);
     }
 
     function stakingTokenTransfer(address _beneficiary,uint _amount,bytes32) external returns(bool) {
@@ -47,6 +51,14 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
 
     function executeProposal(bytes32 _proposalId,int _decision,ExecutableInterface _executable) external returns(bool) {
         return  _executable.execute(_proposalId, 0, _decision);
+    }
+
+    function propose(uint _numOfChoices, bytes32 _paramsHash, address , ExecutableInterface _executable,address _proposer) external returns(bytes32) {
+        bytes32 proposalId = genesisProtocol.propose(_numOfChoices,_paramsHash,0,_executable,_proposer);
+        reputations[proposalId] = reputation.createCloneToken(0);
+        emit NewProposal(proposalId, this, _numOfChoices, msg.sender, _paramsHash);
+
+        return proposalId;
     }
 
 }
