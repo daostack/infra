@@ -282,25 +282,45 @@ contract('Reputation', accounts => {
     it("clone", async () => {
         let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
         let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
-
         const rep1 = Math.floor(Math.random() * 1e6);
-        const rep2 = Math.floor(Math.random() * 1e6);
-        const rep3 = Math.floor(Math.random() * 1e6);
-
         await reputation.mint(accounts[1], rep1, { from: accounts[0] });
-        await reputation.mint(accounts[2], rep2, { from: accounts[0] });
-        await reputation.mint(accounts[3], rep3, { from: accounts[0] });
-
+        assert.equal (await reputation.totalSupply(),rep1);
         var tx = await reputation.createCloneToken(0);
-        assert.equal(tx.logs[2].event,"NewCloneReputaionToken");
+        assert.equal(tx.logs[6].event,"NewCloneReputaionToken");
         var clonedReputationAddress = await getValueFromLogs(tx, "_cloneToken","NewCloneReputaionToken");
         var clonedReputation = await Reputation.at(clonedReputationAddress);
-        const reputationOf1 = await clonedReputation.reputationOf(accounts[1]);
-        const reputationOf2 = await clonedReputation.reputationOf(accounts[2]);
-        const reputationOf3 = await clonedReputation.reputationOf(accounts[3]);
-
+        assert.equal (await reputation.totalSupply(),rep1);
+        var reputationOf1 = await clonedReputation.reputationOf(accounts[1]);
+        assert.equal (await clonedReputation.totalSupply(),rep1);
         assert.equal(reputationOf1.toNumber(), rep1);
-        assert.equal(reputationOf2.toNumber(), rep2);
-        assert.equal(reputationOf3.toNumber(), rep3);
+        await clonedReputation.addAddressToWhitelist(accounts[0]);
+        await clonedReputation.mint(accounts[1],1);
+        assert.equal (await clonedReputation.totalSupply(),rep1+1);
+        assert.equal (await reputation.totalSupply(),rep1+1);
+        reputationOf1 = await reputation.reputationOf(accounts[1]);
+        assert.equal(reputationOf1.toNumber(), rep1 + 1);
+        reputationOf1 = await clonedReputation.reputationOf(accounts[1]);
+        assert.equal(reputationOf1.toNumber(), rep1 + 1);
+
+    });
+
+    it("reputation at ", async () => {
+        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
+        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+        const rep1 = Math.floor(Math.random() * 1e6);
+        await reputation.mint(accounts[1], rep1, { from: accounts[0] });
+        var tx = await reputation.mint(accounts[1], rep1, { from: accounts[0] });
+        await reputation.mint(accounts[3], rep1, { from: accounts[0] });
+
+
+        assert.equal (await reputation.totalSupply(),rep1+rep1+rep1);
+
+        assert.equal (await reputation.totalSupplyAt(tx.receipt.blockNumber),rep1+rep1);
+        assert.equal (await reputation.totalSupplyAt(tx.receipt.blockNumber-1),rep1);
+        assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber),rep1+rep1);
+        assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber-1),rep1);
+
+        assert.equal (await reputation.balanceOfAt(accounts[3],tx.receipt.blockNumber),0);
+
     });
 });
