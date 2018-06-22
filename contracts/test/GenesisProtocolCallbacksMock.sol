@@ -10,7 +10,7 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
     ReputationMiniMe public reputation;
     StandardToken public stakingToken;
     GenesisProtocol genesisProtocol;
-    mapping (bytes32=>address) reputations;
+    mapping (bytes32=>uint) proposalsBlockNumbers;
 
     event NewProposal(bytes32 indexed _proposalId, address indexed _organization, uint _numOfChoices, address _proposer, bytes32 _paramsHash);
 
@@ -26,7 +26,7 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
     }
 
     function getTotalReputationSupply(bytes32 _proposalId) external returns(uint256) {
-        return ReputationMiniMe(reputations[_proposalId]).totalSupply();
+        return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
     function mintReputation(uint _amount,address _beneficiary,bytes32) external returns(bool) {
@@ -38,7 +38,7 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
     }
 
     function reputationOf(address _owner,bytes32 _proposalId) external returns(uint) {
-        return ReputationMiniMe(reputations[_proposalId]).reputationOf(_owner);
+        return reputation.balanceOfAt(_owner,proposalsBlockNumbers[_proposalId]);
     }
 
     function stakingTokenTransfer(address _beneficiary,uint _amount,bytes32) external returns(bool) {
@@ -53,9 +53,13 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface {
         return  _executable.execute(_proposalId, 0, _decision);
     }
 
-    function propose(uint _numOfChoices, bytes32 _paramsHash, address , ExecutableInterface _executable,address _proposer) external returns(bytes32) {
+    function propose(uint _numOfChoices, bytes32 _paramsHash, address , ExecutableInterface _executable,address _proposer)
+    external
+    returns
+    (bytes32)
+    {
         bytes32 proposalId = genesisProtocol.propose(_numOfChoices,_paramsHash,0,_executable,_proposer);
-        reputations[proposalId] = reputation.createCloneToken(0);
+        proposalsBlockNumbers[proposalId] = block.number;
         emit NewProposal(proposalId, this, _numOfChoices, msg.sender, _paramsHash);
 
         return proposalId;

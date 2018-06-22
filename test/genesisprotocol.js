@@ -84,8 +84,8 @@ const setup = async function (accounts,_voteOnBehalf = 0,
 
    testSetup.reputationArray = [20, 10, 70 ];
    testSetup.org = {};
-   let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-   testSetup.org.reputation  = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+   //let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
+   testSetup.org.reputation  = await Reputation.new();
    await testSetup.org.reputation.mint(accounts[0],testSetup.reputationArray[0]);
    await testSetup.org.reputation.mint(accounts[1],testSetup.reputationArray[1]);
    await testSetup.org.reputation.mint(accounts[2],testSetup.reputationArray[2]);
@@ -570,6 +570,14 @@ contract('GenesisProtocol Lite', function (accounts) {
 
     // now lets vote with a minority reputation
     await testSetup.genesisProtocol.vote(proposalId, 1,0);
+
+    //test that reputation change does not effect the snapshot
+    var account2Rep =await testSetup.org.reputation.reputationOf(accounts[2]);
+    assert.equal(account2Rep,70);
+    await testSetup.genesisProtocolCallbacks.burnReputation(account2Rep,accounts[2],0);
+
+    account2Rep =await testSetup.org.reputation.reputationOf(accounts[2]);
+    assert.equal(account2Rep,0);
 
     // // the decisive vote is cast now and the proposal will be executed
     tx = await testSetup.genesisProtocol.vote(proposalId, 2,0, { from: accounts[2] });

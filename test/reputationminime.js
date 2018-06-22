@@ -7,8 +7,7 @@ var ReputationMinimeTokenFactory = artifacts.require("./ReputationMinimeTokenFac
 contract('Reputation', accounts => {
     it("test setting and getting reputation by the owner", async () => {
         let value;
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 3131);
 
@@ -17,15 +16,13 @@ contract('Reputation', accounts => {
     });
 
     it("should be owned by the main account", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
         let owner = await reputation.owner();
         assert.equal(owner, accounts[0]);
     });
 
     it("check permissions", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
         await reputation.mint(accounts[1], 1000);
 
         // only the owner can call mint
@@ -48,8 +45,7 @@ contract('Reputation', accounts => {
     });
 
     it("check total reputation", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
         await reputation.mint(accounts[0], 2000);
         await reputation.mint(accounts[1], 1000);
         await reputation.mint(accounts[1], 500);
@@ -70,8 +66,7 @@ contract('Reputation', accounts => {
     });
 
     it("check total reputation overflow", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
         let BigNumber = require('bignumber.js');
         let bigNum = ((new BigNumber(2)).toPower(128).sub(1));
 
@@ -93,8 +88,7 @@ contract('Reputation', accounts => {
 
     it("test reducing reputation", async () => {
         let value;
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 1500);
         await reputation.burn(accounts[1], 500);
@@ -107,16 +101,14 @@ contract('Reputation', accounts => {
     });
 
     it("totalSupply is 0 on init", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
         const totalSupply = await reputation.totalSupply();
 
         assert.equal(totalSupply.toNumber(), 0);
     });
 
     it("log the Mint event on mint", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         let tx = await reputation.mint(accounts[1], 1000, { from: accounts[0] });
         assert.equal(tx.logs.length, 1);
@@ -126,8 +118,7 @@ contract('Reputation', accounts => {
     });
 
     it("log negative Mint event on negative mint", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 1000, { from: accounts[0] });
         let tx = await reputation.burn(accounts[1], 200, { from: accounts[0] });
@@ -150,8 +141,7 @@ contract('Reputation', accounts => {
     });
 
     it("mint (plus) should be reflected in totalSupply", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 1000, { from: accounts[0] });
         let totalSupply = await reputation.totalSupply();
@@ -165,8 +155,7 @@ contract('Reputation', accounts => {
     });
 
     it("mint (plus) should be reflected in balances", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 1000, { from: accounts[0] });
 
@@ -176,8 +165,7 @@ contract('Reputation', accounts => {
     });
 
     it("mint (minus) should be reflected in totalSupply", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 1000, { from: accounts[0] });
         let totalSupply = await reputation.totalSupply();
@@ -193,8 +181,7 @@ contract('Reputation', accounts => {
     });
 
     it("mint (minus) should be reflected in balances", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         await reputation.mint(accounts[1], 1000, { from: accounts[0] });
         await reputation.burn(accounts[1], 500, { from: accounts[0] });
@@ -211,8 +198,8 @@ contract('Reputation', accounts => {
     describe('onlyOwner', () => {
 
         it('mint by owner', async () => {
-            let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-            let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+
+            let reputation = await Reputation.new();
             try {
                 await reputation.mint(accounts[1], 10, { from: accounts[0] });
             } catch (error) {
@@ -221,8 +208,8 @@ contract('Reputation', accounts => {
         });
 
         it('mint by not owner', async () => {
-            let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-            let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+
+            let reputation = await Reputation.new();
             try {
                 await reputation.mint(accounts[1], 10, { from: accounts[1] });
                 throw 'some exception';
@@ -233,8 +220,8 @@ contract('Reputation', accounts => {
     });
 
     // it("account balance cannot be negative", async () => {
-    //     let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-    //     let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+    //
+    //     let reputation = await Reputation.new();
     //
     //     await reputation.mint(accounts[1], 1, { from: accounts[0] });
     //
@@ -246,8 +233,8 @@ contract('Reputation', accounts => {
     // });
 
     // it("totalSupply cannot be negative", async () => {
-    //     let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-    //     let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+    //
+    //     let reputation = await Reputation.new();
     //
     //     await reputation.mint(accounts[1], 1, { from: accounts[0] });
     //
@@ -259,8 +246,7 @@ contract('Reputation', accounts => {
     // });
 
     it("reputationOf = balances", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+let reputation = await Reputation.new();
 
         const rep1 = Math.floor(Math.random() * 1e6);
         const rep2 = Math.floor(Math.random() * 1e6);
@@ -279,35 +265,8 @@ contract('Reputation', accounts => {
         assert.equal(reputationOf3.toNumber(), rep3);
     });
 
-    it("clone", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
-        const rep1 = Math.floor(Math.random() * 1e6);
-        await reputation.mint(accounts[1], rep1, { from: accounts[0] });
-        assert.equal (await reputation.totalSupply(),rep1);
-        var tx = await reputation.createCloneToken(0);
-        assert.equal(tx.logs[2].event,"NewCloneReputaionToken");
-
-        var clonedReputationAddress = await getValueFromLogs(tx, "_cloneToken","NewCloneReputaionToken");
-        var clonedReputation = await Reputation.at(clonedReputationAddress);
-
-        assert.equal (await reputation.totalSupply(),rep1);
-        var reputationOf1 = await clonedReputation.reputationOf(accounts[1]);
-        assert.equal (await clonedReputation.totalSupply(),rep1);
-        assert.equal(reputationOf1.toNumber(), rep1);
-        await reputation.mint(accounts[1], rep1, { from: accounts[0] });
-
-        assert.equal(await clonedReputation.totalSupply(),rep1);
-        assert.equal(await reputation.totalSupply(),rep1+rep1);
-
-
-
-
-    });
-
     it("reputation at ", async () => {
-        let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
-        let reputation = await Reputation.new(reputationMinimeTokenFactory.address,0,0);
+        let reputation = await Reputation.new();
         const rep1 = Math.floor(Math.random() * 1e6);
         await reputation.mint(accounts[1], rep1, { from: accounts[0] });
         var tx = await reputation.mint(accounts[1], rep1, { from: accounts[0] });
