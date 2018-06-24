@@ -5,8 +5,7 @@ const ExecutableTest = artifacts.require("./ExecutableTest.sol");
 const ERC827TokenMock = artifacts.require('./test/ERC827TokenMock.sol');
 const GenesisProtocolCallbacks = artifacts.require("./GenesisProtocolCallbacksMock.sol");
 var ethereumjs = require('ethereumjs-abi');
-const Reputation = artifacts.require("./ReputationMinime.sol");
-const ReputationMinimeTokenFactory = artifacts.require("./ReputationMinimeTokenFactory.sol");
+const Reputation = artifacts.require("./Reputation.sol");
 
 export class GenesisProtocolParams {
   constructor() {
