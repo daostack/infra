@@ -14,7 +14,8 @@ before_install:
   - sudo apt-get install geth -y -qq
 
 install:
-  - pwd
+  - mkdir -p ./node_modules/
+  - sudo chmod 777 ./node_modules/
   - ls -all ./node_modules/
   - npm i
   - rm -rf build/ # remove any remaining artifacts from a previous build
