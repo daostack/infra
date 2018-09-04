@@ -2,7 +2,6 @@ const helpers = require('./helpers');
 const constants = require('./constants');
 const AbsoluteVote = artifacts.require('AbsoluteVote');
 const QuorumVote = artifacts.require('QuorumVote');
-const StandardToken = artifacts.require('StandardToken');
 const Reputation = artifacts.require('Reputation');
 
 const ERC827TokenMock = artifacts.require('./test/ERC827TokenMock.sol');
@@ -123,8 +122,6 @@ const setupGenesisProtocolParams = async function(
 
 contract('VotingMachine', (accounts)=>{
   it('proposalId should be globally unique', async () =>{
-    const token = await StandardToken.new();
-    const rep = await Reputation.new();
     const absolute = await AbsoluteVote.new();
     const quorum = await QuorumVote.new();
 
