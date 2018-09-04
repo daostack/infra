@@ -1,20 +1,22 @@
 pragma solidity ^0.4.24;
 
 import "../VotingMachines/GenesisProtocolCallbacksInterface.sol";
+import "../VotingMachines/GenesisProtocolExecuteInterface.sol";
 import "../VotingMachines/GenesisProtocol.sol";
 import "../Reputation.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./Debug.sol";
 
 
-contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface,Ownable {
+contract GenesisProtocolCallbacksMock is Debug,GenesisProtocolCallbacksInterface,GenesisProtocolExecuteInterface,Ownable {
 
     Reputation public reputation;
     StandardToken public stakingToken;
     GenesisProtocol genesisProtocol;
     mapping (bytes32=>uint) proposalsBlockNumbers;
 
-    event NewProposal(bytes32 indexed _proposalId, address indexed _organization, uint _numOfChoices, address _proposer, bytes32 _paramsHash);
 
+    event NewProposal(bytes32 indexed _proposalId, address indexed _organization, uint _numOfChoices, address _proposer, bytes32 _paramsHash);
 
     /**
      * @dev Constructor
@@ -51,29 +53,32 @@ contract GenesisProtocolCallbacksMock is GenesisProtocolCallbacksInterface,Ownab
         return reputation.balanceOfAt(_owner,proposalsBlockNumbers[_proposalId]);
     }
 
-    function stakingTokenTransfer(address _beneficiary,uint _amount,bytes32)
+    function stakingTokenTransfer(StandardToken _stakingToken,address _beneficiary,uint _amount,bytes32)
     external
     onlyOwner
     returns(bool)
     {
-        return stakingToken.transfer(_beneficiary,_amount);
+        return _stakingToken.transfer(_beneficiary,_amount);
     }
 
     function setParameters(uint[14] _params,address _voteOnBehalf) external returns(bytes32) {
         return genesisProtocol.setParameters(_params,_voteOnBehalf);
     }
 
-    function executeProposal(bytes32 _proposalId,int _decision,ExecutableInterface _executable) external returns(bool) {
-        return  _executable.execute(_proposalId, 0, _decision);
+    function executeProposal(bytes32 _proposalId,int _decision) external returns(bool) {
+        emit LogBytes32(_proposalId);
+        emit LogInt(_decision);
+        return true;
     }
 
-    function propose(uint _numOfChoices, bytes32 _paramsHash, address , ExecutableInterface _executable,address _proposer)
+    function propose(uint _numOfChoices, bytes32 _paramsHash, address ,address _proposer)
     external
     returns
     (bytes32)
     {
-        bytes32 proposalId = genesisProtocol.propose(_numOfChoices,_paramsHash,0,_executable,_proposer);
+        bytes32 proposalId = genesisProtocol.propose(_numOfChoices,_paramsHash,_proposer);
         emit NewProposal(proposalId, this, _numOfChoices, _proposer, _paramsHash);
+        proposalsBlockNumbers[proposalId] = block.number;
 
         return proposalId;
     }
