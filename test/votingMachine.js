@@ -101,7 +101,7 @@ const setupGenesisProtocolParams = async function(
                                                  _votersReputationLossRatio,
                                                  _votersGainRepRatioFromLostRep,
                                                  _daoBountyConst,
-                                                 _daoBountyLimt],voteOnBehalf);
+                                                 _daoBountyLimt],[voteOnBehalf,0]);
   genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_preBoostedVoteRequiredPercentage,
                                                  _preBoostedVotePeriodLimit,
                                                  _boostedVotePeriodLimit,
@@ -115,7 +115,7 @@ const setupGenesisProtocolParams = async function(
                                                  _votersReputationLossRatio,
                                                  _votersGainRepRatioFromLostRep,
                                                  _daoBountyConst,
-                                                 _daoBountyLimt],voteOnBehalf);
+                                                 _daoBountyLimt],[voteOnBehalf,0]);
   return genesisProtocolParams;
 };
 
@@ -125,14 +125,14 @@ contract('VotingMachine', (accounts)=>{
     const absolute = await AbsoluteVote.new();
     const quorum = await QuorumVote.new();
 
-    const absoluteParams = await absolute.setParameters.call(50,true);
-    await absolute.setParameters(50,true);
+    const absoluteParams = await absolute.setParameters.call(50,true,helpers.NULL_ADDRESS);
+    await absolute.setParameters(50,true,helpers.NULL_ADDRESS);
     var testSetup = await setupGenesisProtocol(accounts);
-    const quoromParams = await quorum.setParameters.call(50,true);
-    await quorum.setParameters(50,true);
-    const absoluteProposalId = await absolute.propose(5, absoluteParams,accounts[0]);
-    const genesisProposalId = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,accounts[0]);
-    const quorumProposalId = await quorum.propose(5, quoromParams,accounts[0]);
+    const quoromParams = await quorum.setParameters.call(50,true,helpers.NULL_ADDRESS);
+    await quorum.setParameters(50,true,helpers.NULL_ADDRESS);
+    const absoluteProposalId = await absolute.propose(5, absoluteParams,accounts[0],helpers.NULL_ADDRESS);
+    const genesisProposalId = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,accounts[0],helpers.NULL_ADDRESS);
+    const quorumProposalId = await quorum.propose(5, quoromParams,accounts[0],helpers.NULL_ADDRESS);
 
     assert(absoluteProposalId !== genesisProposalId, 'AbsoluteVote gives the same proposalId as GenesisProtocol');
     assert(genesisProposalId !== quorumProposalId, 'GenesisProtocol gives the same proposalId as QuorumVote');

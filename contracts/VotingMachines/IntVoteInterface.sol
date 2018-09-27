@@ -18,12 +18,14 @@ interface IntVoteInterface {
      * @param _numOfChoices number of voting choices
      * @param _proposalParameters defines the parameters of the voting machine used for this proposal
      * @param _proposer address
+     * @param _organization address - if this address is zero the msg.sender will be used as the organization address.
      * @return proposal's id.
      */
     function propose(
         uint _numOfChoices,
         bytes32 _proposalParameters,
-        address _proposer
+        address _proposer,
+        address _organization
         ) external returns(bytes32);
 
     // Only owned proposals and only the owner:
