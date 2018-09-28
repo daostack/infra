@@ -28,8 +28,7 @@ const setupGenesisProtocolParams = async function(
                                             _votersReputationLossRatio=10,
                                             _votersGainRepRatioFromLostRep=80,
                                             _daoBountyConst=15,
-                                            _daoBountyLimt=10,
-                                            _authorizedProposerSender = 0
+                                            _daoBountyLimt=10
                                             ) {
   var genesisProtocolParams = new GenesisProtocolParams();
   await testSetup.genesisProtocolCallbacks.setParameters([_preBoostedVoteRequiredPercentage,
@@ -46,7 +45,7 @@ const setupGenesisProtocolParams = async function(
                                                  _votersGainRepRatioFromLostRep,
                                                  _daoBountyConst,
                                                  _daoBountyLimt],
-                                                 [voteOnBehalf,_authorizedProposerSender]);
+                                                 voteOnBehalf);
   genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_preBoostedVoteRequiredPercentage,
                                                  _preBoostedVotePeriodLimit,
                                                  _boostedVotePeriodLimit,
@@ -61,7 +60,7 @@ const setupGenesisProtocolParams = async function(
                                                  _votersGainRepRatioFromLostRep,
                                                  _daoBountyConst,
                                                  _daoBountyLimt],
-                                                 [voteOnBehalf,_authorizedProposerSender]);
+                                                 voteOnBehalf);
   return genesisProtocolParams;
 };
 
@@ -80,9 +79,7 @@ const setup = async function (accounts,_voteOnBehalf = 0,
                                       _votersReputationLossRatio=10,
                                       _votersGainRepRatioFromLostRep=80,
                                       _daoBountyConst = 15,
-                                      _daoBountyLimt =10,
-                                      _authorizedProposerSender = 0,
-                                      _useGenesisProtocolMockAsProposerSender = false ) {
+                                      _daoBountyLimt =10) {
    var testSetup = new helpers.TestSetup();
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],3000);
    testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
@@ -97,10 +94,6 @@ const setup = async function (accounts,_voteOnBehalf = 0,
    await testSetup.stakingToken.transfer(accounts[2],1000);
    testSetup.genesisProtocolCallbacks = await GenesisProtocolCallbacks.new(testSetup.org.reputation.address,testSetup.stakingToken.address,testSetup.genesisProtocol.address);
    await testSetup.org.reputation.transferOwnership(testSetup.genesisProtocolCallbacks.address);
-   var authorizedProposerSender = _authorizedProposerSender;
-   if (_useGenesisProtocolMockAsProposerSender === true) {
-     authorizedProposerSender = testSetup.genesisProtocolCallbacks.address;
-   }
    testSetup.genesisProtocolParams= await setupGenesisProtocolParams(testSetup,
                                          _voteOnBehalf,
                                          _preBoostedVoteRequiredPercentage,
@@ -116,8 +109,7 @@ const setup = async function (accounts,_voteOnBehalf = 0,
                                          _votersReputationLossRatio,
                                          _votersGainRepRatioFromLostRep,
                                          _daoBountyConst,
-                                         _daoBountyLimt,
-                                         authorizedProposerSender);
+                                         _daoBountyLimt);
     YES = await testSetup.genesisProtocol.YES();
     YES = YES.toNumber();
     NO = await testSetup.genesisProtocol.NO();
@@ -1625,28 +1617,16 @@ contract('GenesisProtocol Lite', accounts => {
     assert.equal(redeemValues[2].toNumber(),0);
   });
 
-  it("cannot propose with not authorizedProposerSender", async () => {
-      var testSetup = await setup(accounts);
-      try {
-        await testSetup.genesisProtocolCallbacks.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[0],accounts[0]);
-        assert(false, 'cannot propose with organization');
-      } catch (ex) {
-        helpers.assertVMException(ex);
-      }
-      await testSetup.genesisProtocolCallbacks.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[0],helpers.NULL_ADDRESS);
-  });
-
   it("can set organization with authorizedProposerSender", async () => {
-      var testSetup = await setup(accounts,0,50,60,60,1,1,0,0,60,1,10,10,80,15,10,accounts[0]);
+      var testSetup = await setup(accounts);
       var tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[1]);
       assert.equal(tx.logs.length, 1);
       assert.equal(tx.logs[0].event, "NewProposal");
       assert.equal(tx.logs[0].args._organization, accounts[1]);
 
-      testSetup = await setup(accounts,0,50,60,60,1,1,0,0,60,1,10,10,80,15,10,accounts[1]);
       try {
-        await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[1]);
-        assert(false, 'accounts[0] is not authorized to set organization');
+        await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[1],{from:accounts[1]});
+        assert(false, 'accounts[1] is not authorized to set organization');
       } catch (ex) {
         helpers.assertVMException(ex);
       }

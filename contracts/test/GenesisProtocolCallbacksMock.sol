@@ -75,8 +75,8 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         return _stakingToken.balanceOf(this);
     }
 
-    function setParameters(uint[14] _params,address[2] _autorizedAddresses) external returns(bytes32) {
-        return genesisProtocol.setParameters(_params,_autorizedAddresses);
+    function setParameters(uint[14] _params,address _voteOnBehalf) external returns(bytes32) {
+        return genesisProtocol.setParameters(_params,_voteOnBehalf);
     }
 
     function executeProposal(bytes32 _proposalId,int _decision) external returns(bool) {

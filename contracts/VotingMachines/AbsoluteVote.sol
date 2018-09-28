@@ -14,7 +14,6 @@ contract AbsoluteVote is IntVoteInterface {
     struct Parameters {
         uint precReq; // how many percentages required for the proposal to be passed
         bool allowOwner; // does this proposal has an owner who has owner rights?
-        address authorizedProposerSender; //Authorized proposer sender
     }
 
     struct Voter {
@@ -43,6 +42,10 @@ contract AbsoluteVote is IntVoteInterface {
 
     uint public constant MAX_NUM_OF_CHOICES = 10;
     uint public proposalsCnt; // Total amount of proposals
+
+    //organization =>  msg.sender
+    mapping(address    =>    address    ) authorizedProposerSenders; //authorized proposer senders
+
 
   /**
    * @dev Check that there is owner for the proposal and he sent the transaction
@@ -86,7 +89,11 @@ contract AbsoluteVote is IntVoteInterface {
         if (_organization == address(0)) {
             proposal.organization = msg.sender;
         } else {
-            require(parameters[_paramsHash].authorizedProposerSender == msg.sender,"msg.sender is not authorized to set organization");
+            address authorizedProposerSender = authorizedProposerSenders[_organization];
+            require(authorizedProposerSender == address(0)||authorizedProposerSender == msg.sender,"msg.sender cannot set organization");
+            if (authorizedProposerSender == address(0)) {
+                authorizedProposerSenders[_organization] = msg.sender;
+            }
             proposal.organization = _organization;
         }
         proposal.organization = msg.sender;
@@ -225,13 +232,12 @@ contract AbsoluteVote is IntVoteInterface {
     /**
      * @dev hash the parameters, save them if necessary, and return the hash value
     */
-    function setParameters(uint _precReq, bool _allowOwner,address _authorizedProposerSender) public returns(bytes32) {
+    function setParameters(uint _precReq, bool _allowOwner) public returns(bytes32) {
         require(_precReq <= 100 && _precReq > 0);
-        bytes32 hashedParameters = getParametersHash(_precReq, _allowOwner,_authorizedProposerSender);
+        bytes32 hashedParameters = getParametersHash(_precReq, _allowOwner);
         parameters[hashedParameters] = Parameters({
             precReq: _precReq,
-            allowOwner: _allowOwner,
-            authorizedProposerSender: _authorizedProposerSender
+            allowOwner: _allowOwner
         });
         return hashedParameters;
     }
@@ -239,8 +245,8 @@ contract AbsoluteVote is IntVoteInterface {
     /**
      * @dev hashParameters returns a hash of the given parameters
      */
-    function getParametersHash(uint _precReq, bool _allowOwner, address _authorizedProposerSender) public pure returns(bytes32) {
-        return keccak256(abi.encodePacked(_precReq, _allowOwner, _authorizedProposerSender));
+    function getParametersHash(uint _precReq, bool _allowOwner) public pure returns(bytes32) {
+        return keccak256(abi.encodePacked(_precReq, _allowOwner));
     }
 
     function cancelVoteInternal(bytes32 _proposalId, address _voter) internal {

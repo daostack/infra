@@ -48,8 +48,6 @@ contract GenesisProtocol is IntVoteInterface {
                                 //  daoBountyConst should be greater than stakerFeeRatioForVoters and less than 2 * stakerFeeRatioForVoters.
                                 //daoBountyParams[1] = daoBountyLimit The daoBounty cannot be greater than daoBountyLimit.
         address voteOnBehalf; //this address is allowed to vote of behalf of someone else.
-        address authorizedProposerSender; //this address is authorized to propose
-
     }
     struct Voter {
         uint vote; // YES(1) ,NO(2)
@@ -115,6 +113,9 @@ contract GenesisProtocol is IntVoteInterface {
     keccak256(abi.encodePacked("address GenesisProtocolAddress","bytes32 ProposalId", "uint Vote","uint AmountToStake","uint Nonce"));
     // web3.eth.sign prefix
     string public constant ETH_SIGN_PREFIX= "\x19Ethereum Signed Message:\n32";
+          //organization =>  msg.sender
+    mapping(address    =>    address    ) authorizedProposerSenders; //authorized proposer senders
+
 
     /**
      * @dev Constructor
@@ -166,9 +167,12 @@ contract GenesisProtocol is IntVoteInterface {
         proposal.callbacks = msg.sender;
         if (_organization == address(0)) {
             proposal.organization = msg.sender;
-
         } else {
-            require(parameters[_paramsHash].authorizedProposerSender == msg.sender,"msg.sender is not authorized to set organization");
+            address authorizedProposerSender = authorizedProposerSenders[_organization];
+            require(authorizedProposerSender == address(0)||authorizedProposerSender == msg.sender,"msg.sender cannot set organization");
+            if (authorizedProposerSender == address(0)) {
+                authorizedProposerSenders[_organization] = msg.sender;
+            }
             proposal.organization = _organization;
         }
         proposal.state = ProposalState.PreBoosted;
@@ -636,13 +640,11 @@ contract GenesisProtocol is IntVoteInterface {
      *    _params[11] -_votersGainRepRatioFromLostRep
      *    _params[12] - _daoBountyConst
      *    _params[13] - _daoBountyLimit
-     * @param _autorizedAddresses -addresses array
-     *     _autorizedAddresses[0] _voteOnBehalf - authorized to vote on behalf of others.
-     *     _autorizedAddresses[1] _authorizedProposerSender - authorized proposer sender address
+     * @param _voteOnBehalf - authorized to vote on behalf of others.
     */
     function setParameters(
         uint[14] _params, //use array here due to stack too deep issue.
-        address[2] _autorizedAddresses
+        address _voteOnBehalf
     )
     public
     returns(bytes32)
@@ -659,7 +661,7 @@ contract GenesisProtocol is IntVoteInterface {
         require(_params[12] <= (2 * _params[9]),"daoBountyConst <= 2 * stakerFeeRatioForVoters");
         require(_params[12] >= _params[9],"daoBountyConst >= stakerFeeRatioForVoters");
 
-        bytes32 paramsHash = getParametersHash(_params, _autorizedAddresses);
+        bytes32 paramsHash = getParametersHash(_params, _voteOnBehalf);
 
         uint[2] memory _daoBountyParams;
         _daoBountyParams[0] = _params[12];
@@ -679,8 +681,7 @@ contract GenesisProtocol is IntVoteInterface {
             votersReputationLossRatio:_params[10],
             votersGainRepRatioFromLostRep:_params[11],
             daoBountyParams:_daoBountyParams,
-            voteOnBehalf:_autorizedAddresses[0],
-            authorizedProposerSender:_autorizedAddresses[1]
+            voteOnBehalf:_voteOnBehalf
         });
         return paramsHash;
     }
@@ -690,7 +691,7 @@ contract GenesisProtocol is IntVoteInterface {
    */
     function getParametersHash(
         uint[14] _params,//use array here due to stack too deep issue.
-        address[2] _autorizedAddresses
+        address _voteOnBehalf
     )
         public
         pure
@@ -716,7 +717,7 @@ contract GenesisProtocol is IntVoteInterface {
                 _params[12],
                 _params[13]
              )),
-             _autorizedAddresses[0],_autorizedAddresses[1]
+            _voteOnBehalf
         ));
     }
 
