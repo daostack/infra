@@ -187,17 +187,19 @@ const propose = async function(_testSetup,_proposer = 0) {
                                                                 _proposer,
                                                                  helpers.NULL_ADDRESS);
       const proposalId = await getValueFromLogs(tx, '_proposalId');
-      assert.equal(tx.logs.length, 2);
-      assert.equal(tx.logs[1].event, "NewProposal");
-      assert.equal(tx.logs[1].args._proposalId, proposalId);
-      assert.equal(tx.logs[1].args._proposer, _proposer);
-      assert.equal(tx.logs[1].args._paramsHash, _testSetup.genesisProtocolParams.paramsHash);
+      assert.equal(tx.logs.length, 1);
+      assert.equal(tx.logs[0].event, "NewProposal");
+      assert.equal(tx.logs[0].args._proposalId, proposalId);
+      assert.equal(tx.logs[0].args._proposer, _proposer);
+      assert.equal(tx.logs[0].args._paramsHash, _testSetup.genesisProtocolParams.paramsHash);
+      assert.equal(proposalId,await helpers.getProposalId(tx,_testSetup.genesisProtocol,"NewProposal"));
       assert.isOk(proposalId);
       return proposalId;
   };
 
 const threshold = async function(_testSetup) {
-      return await _testSetup.genesisProtocol.threshold(_testSetup.genesisProtocolParams.paramsHash,_testSetup.genesisProtocolCallbacks.address);
+      const organizationId = await web3.utils.soliditySha3(_testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+      return await _testSetup.genesisProtocol.threshold(_testSetup.genesisProtocolParams.paramsHash,organizationId);
 };
 
 const signatureType = 1;
@@ -282,10 +284,11 @@ contract('GenesisProtocol Lite', accounts => {
 
       //propose a vote
       const proposalId = await propose(testSetup);
+      const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
       var submittedTime = (await  web3.eth.getBlock("latest")).timestamp;
 
       await checkProposalInfo(proposalId, [
-                                          testSetup.genesisProtocolCallbacks.address,
+                                          organizationId,
                                           testSetup.genesisProtocolCallbacks.address,
                                           numberOfChoices,
                                           0,
@@ -310,7 +313,7 @@ contract('GenesisProtocol Lite', accounts => {
       assert.equal(testSetup.reputationArray[0],proposalStatus[0]);
       assert.equal(0,proposalStatus[1]);
       await checkProposalInfo(proposalId, [
-                                           testSetup.genesisProtocolCallbacks.address,
+                                           organizationId,
                                            testSetup.genesisProtocolCallbacks.address,
                                            numberOfChoices,
                                            0,
@@ -334,7 +337,7 @@ contract('GenesisProtocol Lite', accounts => {
       assert.equal(testSetup.reputationArray[1],proposalStatus[1]);
 
       await checkProposalInfo(proposalId,[
-                                           testSetup.genesisProtocolCallbacks.address,
+                                           organizationId,
                                            testSetup.genesisProtocolCallbacks.address,
                                            numberOfChoices,
                                            0,
@@ -771,13 +774,12 @@ contract('GenesisProtocol Lite', accounts => {
     var testSetup = await setup(accounts);
 
     var proposalId = await propose(testSetup);
-
-
+    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
     // no one has voted yet at this point
     var submittedTime = (await  web3.eth.getBlock("latest")).timestamp;
     var state = 3;
     var winningVote = 2;
-    await checkProposalInfo(proposalId, [testSetup.genesisProtocolCallbacks.address,
+    await checkProposalInfo(proposalId, [organizationId,
                                         testSetup.genesisProtocolCallbacks.address,
                                              2,
                                             0,
@@ -1288,14 +1290,17 @@ contract('GenesisProtocol Lite', accounts => {
 
 
       var proposalId = await propose(testSetup);
+      const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+
       assert.equal(await threshold(testSetup),1);
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(testSetup.genesisProtocolCallbacks.address),0);
+
+      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
 
       await testSetup.genesisProtocol.vote(proposalId,YES,0);
       await stake(testSetup,proposalId,YES,100,accounts[0]);
       assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),true);
       assert.equal(await testSetup.genesisProtocol.state(proposalId),4);
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(testSetup.genesisProtocolCallbacks.address),1);
+      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
       assert.equal(await threshold(testSetup),2);
 
       //set up another proposal
@@ -1304,13 +1309,13 @@ contract('GenesisProtocol Lite', accounts => {
       await testSetup.genesisProtocol.vote(proposalId,YES,0);
       await stake(testSetup,proposalId,YES,100,accounts[0]);
       assert.equal(await testSetup.genesisProtocol.state(proposalId),4);
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(testSetup.genesisProtocolCallbacks.address),2);
+      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),2);
       assert.equal(await threshold(testSetup),4);
 
       //execute
       await helpers.increaseTime(61);
       await testSetup.genesisProtocol.execute(proposalId);
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(testSetup.genesisProtocolCallbacks.address),1);
+      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
       assert.equal(await threshold(testSetup),1);
     });
 
@@ -1453,8 +1458,8 @@ contract('GenesisProtocol Lite', accounts => {
       var testSetup = await setup(accounts,0,50,60,60,scoreThresholdParamsA,scoreThresholdParamsB,0,20,60,1,10,10,0,15,10);
 
       var proposalId = await propose(testSetup);
-
-      assert.equal(await testSetup.genesisProtocol.getProposalOrganization(proposalId),testSetup.genesisProtocolCallbacks.address);
+      const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+      assert.equal(await testSetup.genesisProtocol.getProposalOrganization(proposalId),organizationId);
     });
 
     it('getAllowedRangeOfChoices', async function () {
@@ -1543,6 +1548,7 @@ contract('GenesisProtocol Lite', accounts => {
     var testSetup = await setup(accounts,0,50,60,60,1,1,0,quietEndingPeriod,60,1,10,10,0,15,10);
 
     var proposalId = await propose(testSetup);
+    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
 
     //boost proposal
     await stake(testSetup,proposalId,YES,100,accounts[0]);
@@ -1554,10 +1560,10 @@ contract('GenesisProtocol Lite', accounts => {
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
     assert.equal(proposalInfo[proposalStateIndex],5);//quiteEndperiod
     await helpers.increaseTime(10); //increase time
-    assert.equal(await testSetup.genesisProtocol.getBoostedProposalsCount(testSetup.genesisProtocolCallbacks.address),1);
+    assert.equal(await testSetup.genesisProtocol.getBoostedProposalsCount(organizationId),1);
     //vote NO to toggle direction again and extend the quite end period
     await testSetup.genesisProtocol.vote(proposalId,NO,0,{from:accounts[2]}); //change winning vote and execute
-    assert.equal(await testSetup.genesisProtocol.getBoostedProposalsCount(testSetup.genesisProtocolCallbacks.address),0);
+    assert.equal(await testSetup.genesisProtocol.getBoostedProposalsCount(organizationId),0);
     //increase time after the proposal expiration
     await helpers.increaseTime(61); //increase time
     assert.equal(await threshold(testSetup),1);
@@ -1617,20 +1623,17 @@ contract('GenesisProtocol Lite', accounts => {
     assert.equal(redeemValues[2].toNumber(),0);
   });
 
-  it("can set organization with authorizedProposerSender", async () => {
+  it("set organization ", async () => {
       var testSetup = await setup(accounts);
       var tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[1]);
       assert.equal(tx.logs.length, 1);
       assert.equal(tx.logs[0].event, "NewProposal");
-      assert.equal(tx.logs[0].args._organization, accounts[1]);
+      assert.equal(tx.logs[0].args._organization,await web3.utils.soliditySha3(accounts[0],accounts[1]));
 
-      try {
-        await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[1],{from:accounts[1]});
-        assert(false, 'accounts[1] is not authorized to set organization');
-      } catch (ex) {
-        helpers.assertVMException(ex);
-      }
-
+      tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,0,accounts[1],{from : accounts[1]});
+      assert.equal(tx.logs.length, 1);
+      assert.equal(tx.logs[0].event, "NewProposal");
+      assert.equal(tx.logs[0].args._organization,await web3.utils.soliditySha3(accounts[1],accounts[1]));
   });
 
 

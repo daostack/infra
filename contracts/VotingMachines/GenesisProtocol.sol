@@ -62,7 +62,7 @@ contract GenesisProtocol is IntVoteInterface {
     }
 
     struct Proposal {
-        address organization; // the organization's address the proposal is target to.
+        bytes32 organization; // the organization unique identifier the proposal is target to.
         address callbacks;    // should fulfill voting callbacks interface.
         uint numOfChoices;
         uint votersStakes;
@@ -88,10 +88,10 @@ contract GenesisProtocol is IntVoteInterface {
         mapping(address  => Staker   ) stakers;
     }
 
-    event Stake(bytes32 indexed _proposalId, address indexed _organization, address indexed _staker,uint _vote,uint _amount);
-    event Redeem(bytes32 indexed _proposalId, address indexed _organization, address indexed _beneficiary,uint _amount);
-    event RedeemDaoBounty(bytes32 indexed _proposalId, address indexed _organization, address indexed _beneficiary,uint _amount);
-    event RedeemReputation(bytes32 indexed _proposalId, address indexed _organization, address indexed _beneficiary,uint _amount);
+    event Stake(bytes32 indexed _proposalId, bytes32 indexed _organization, address indexed _staker,uint _vote,uint _amount);
+    event Redeem(bytes32 indexed _proposalId, bytes32 indexed _organization, address indexed _beneficiary,uint _amount);
+    event RedeemDaoBounty(bytes32 indexed _proposalId, bytes32 indexed _organization, address indexed _beneficiary,uint _amount);
+    event RedeemReputation(bytes32 indexed _proposalId, bytes32 indexed _organization, address indexed _beneficiary,uint _amount);
     event GPExecuteProposal(bytes32 indexed _proposalId, ExecutionState _executionState);
 
     mapping(bytes32=>Parameters) public parameters;  // A mapping from hashes to parameters
@@ -101,11 +101,11 @@ contract GenesisProtocol is IntVoteInterface {
     uint constant public NO = 2;
     uint constant public YES = 1;
     uint public proposalsCnt; // Total number of proposals
-    mapping(address=>uint) public orgBoostedProposalsCnt;
+    mapping(bytes32=>uint) public orgBoostedProposalsCnt;
     StandardToken public stakingToken;
     mapping(bytes=>bool) stakeSignatures; //stake signatures
     address constant GEN_TOKEN_ADDRESS = 0x543Ff227F64Aa17eA132Bf9886cAb5DB55DCAddf;
-    mapping(address=>OrderStatisticTree.Tree) proposalsExpiredTimes; //proposals expired times
+    mapping(bytes32=>OrderStatisticTree.Tree) proposalsExpiredTimes; //proposals expired times
 
     // Digest describing the data the user signs according EIP 712.
     // Needs to match what is passed to Metamask.
@@ -113,10 +113,6 @@ contract GenesisProtocol is IntVoteInterface {
     keccak256(abi.encodePacked("address GenesisProtocolAddress","bytes32 ProposalId", "uint Vote","uint AmountToStake","uint Nonce"));
     // web3.eth.sign prefix
     string public constant ETH_SIGN_PREFIX= "\x19Ethereum Signed Message:\n32";
-          //organization =>  msg.sender
-    mapping(address    =>    address    ) authorizedProposerSenders; //authorized proposer senders
-
-
     /**
      * @dev Constructor
      */
@@ -147,8 +143,7 @@ contract GenesisProtocol is IntVoteInterface {
      * @param _numOfChoices number of voting choices
      * @param _paramsHash parameters hash
      * @param _proposer address
-     * @param _organization address - if this address is zero the msg.sender will be used as the organization address.
-     * @return proposal's id.
+     * @param _organization address
      */
     function propose(uint _numOfChoices, bytes32 _paramsHash,address _proposer,address _organization)
         external
@@ -165,16 +160,8 @@ contract GenesisProtocol is IntVoteInterface {
         Proposal memory proposal;
         proposal.numOfChoices = _numOfChoices;
         proposal.callbacks = msg.sender;
-        if (_organization == address(0)) {
-            proposal.organization = msg.sender;
-        } else {
-            address authorizedProposerSender = authorizedProposerSenders[_organization];
-            require(authorizedProposerSender == address(0)||authorizedProposerSender == msg.sender,"msg.sender cannot set organization");
-            if (authorizedProposerSender == address(0)) {
-                authorizedProposerSenders[_organization] = msg.sender;
-            }
-            proposal.organization = _organization;
-        }
+        proposal.organization = keccak256(abi.encodePacked(msg.sender,_organization));
+
         proposal.state = ProposalState.PreBoosted;
         // solium-disable-next-line security/no-block-members
         proposal.submittedTime = now;
@@ -382,9 +369,9 @@ contract GenesisProtocol is IntVoteInterface {
   /**
     * @dev getProposalOrganization return the organization for a given proposal
     * @param _proposalId the ID of the proposal
-    * @return uint total reputation supply
+    * @return bytes32 organization identifier
     */
-    function getProposalOrganization(bytes32 _proposalId) external view returns(address) {
+    function getProposalOrganization(bytes32 _proposalId) external view returns(bytes32) {
         return (proposals[_proposalId].organization);
     }
 
@@ -588,10 +575,10 @@ contract GenesisProtocol is IntVoteInterface {
 
     /**
      * @dev getBoostedProposalsCount return the number of boosted proposal for an organization
-     * @param _organization the organization
+     * @param _organization the organization identifier
      * @return uint number of boosted proposals
      */
-    function getBoostedProposalsCount(address _organization) public view returns(uint) {
+    function getBoostedProposalsCount(bytes32 _organization) public view returns(uint) {
         uint expiredProposals;
         if (proposalsExpiredTimes[_organization].count() != 0) {
           // solium-disable-next-line security/no-block-members
@@ -604,11 +591,11 @@ contract GenesisProtocol is IntVoteInterface {
      * @dev threshold return the organization's score threshold which required by
      * a proposal to shift to boosted state.
      * This threshold is dynamically set and it depend on the number of boosted proposal.
-     * @param _organization the organization
+     * @param _organization the organization identifier
      * @param _paramsHash the organization parameters hash
      * @return int organization's score threshold.
      */
-    function threshold(bytes32 _paramsHash,address _organization) public view returns(int) {
+    function threshold(bytes32 _paramsHash,bytes32 _organization) public view returns(int) {
         uint boostedProposals = getBoostedProposalsCount(_organization);
         int216 e = 2;
 
