@@ -207,7 +207,7 @@ contract('AbsoluteVote', accounts => {
     assert.equal(voteTX.logs[0].args._proposalId, proposalId);
     assert.equal(voteTX.logs[0].args._voter, accounts[0]);
     assert.equal(voteTX.logs[0].args._vote, 1);
-    assert.equal(voteTX.logs[0].args._reputation, reputationArray[0]);
+    assert.equal(voteTX.logs[0].args._balance, reputationArray[0]);
 
     let cancelVoteTX = await absoluteVote.cancelVote(proposalId);
     assert.equal(cancelVoteTX.logs.length, 1);
@@ -728,11 +728,11 @@ contract('AbsoluteVote', accounts => {
     assert.isOk(proposalId);
 
     // Vote with the reputation the I own - should work
-    await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, reputationArray[0], 0,0);
+    await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, reputationArray[0], 0);
 
     // Vote with negative reputation - exception should be raised
     try {
-      await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, -100, 0,0);
+      await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, -100, 0);
       assert(false, 'Vote with -100 reputation voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -740,7 +740,7 @@ contract('AbsoluteVote', accounts => {
 
     // Vote with more reputation that i own - exception should be raised
     try {
-      await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, (reputationArray[0] + 1), 0,0);
+      await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, (reputationArray[0] + 1), 0);
       assert(false, 'Not enough reputation - voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -750,7 +750,7 @@ contract('AbsoluteVote', accounts => {
     let BigNumber = require('bignumber.js');
     let bigNum = ((new BigNumber(2)).toPower(254));
     try {
-      await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, bigNum, 0,0);
+      await absoluteVote.voteWithSpecifiedAmounts(proposalId, 1, bigNum, 0);
       assert(false, 'Voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -807,7 +807,7 @@ contract('AbsoluteVote', accounts => {
 
     // Lets try to call voteWithSpecifiedAmounts with invalid proposal id
     try {
-      await absoluteVote.voteWithSpecifiedAmounts(helpers.NULL_HASH, 1, 1, 1,0);
+      await absoluteVote.voteWithSpecifiedAmounts(helpers.NULL_HASH, 1, 1, 0);
       assert(false, 'Invalid proposal ID has been delivered');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -878,7 +878,7 @@ contract('AbsoluteVote', accounts => {
     await checkProposalInfoWithAbsoluteVote(proposalId2, [absoluteVoteExecuteMock2.address, organization2Id,absoluteVoteExecuteMock2.address, 2, paramsHash2, 0, true], absoluteVote2);
 
     // Account 0 votes in both proposals, and on behalf of Account 1 - should get an exception for that
-    await absoluteVote1.voteWithSpecifiedAmounts(proposalId1, 2, 2, 0,0);
+    await absoluteVote1.voteWithSpecifiedAmounts(proposalId1, 2, 2, 0);
     await absoluteVote2.vote(proposalId2, 0,0);
     try {
       await absoluteVoteExecuteMock.ownerVote(proposalId2, 0, accounts[1]);

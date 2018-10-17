@@ -1,6 +1,6 @@
 pragma solidity ^0.4.25;
 
-import "../votingMachines/VotingMachineCallbacksInterface.sol";
+import "../votingMachines/GenesisProtocolCallbacksInterface.sol";
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/GenesisProtocol.sol";
 import "../Reputation.sol";
@@ -8,7 +8,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./Debug.sol";
 
 
-contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,ProposalExecuteInterface,Ownable {
+contract GenesisProtocolCallbacksMock is Debug,GenesisProtocolCallbacksInterface,ProposalExecuteInterface,Ownable {
 
     Reputation public reputation;
     StandardToken public stakingToken;
@@ -35,7 +35,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         transferOwnership(genesisProtocol);
     }
 
-    function getTotalReputationSupply(bytes32 _proposalId) external view returns(uint256) {
+    function getTotalSupply(bytes32 _proposalId) external view returns(uint256) {
         return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
@@ -55,7 +55,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         return reputation.burn(_beneficiary,_amount);
     }
 
-    function reputationOf(address _owner,bytes32 _proposalId) external view returns(uint) {
+    function balanceOf(address _owner,bytes32 _proposalId) external view returns(uint) {
         return reputation.balanceOfAt(_owner,proposalsBlockNumbers[_proposalId]);
     }
 

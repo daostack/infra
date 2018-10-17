@@ -1,6 +1,5 @@
 pragma solidity ^0.4.25;
 
-import "../Reputation.sol";
 import "./IntVoteInterface.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./VotingMachineCallbacksInterface.sol";
@@ -18,7 +17,7 @@ contract AbsoluteVote is IntVoteInterface {
 
     struct Voter {
         uint vote; // 0 - 'abstain'
-        uint reputation; // amount of voter's reputation
+        uint balance; // voter's balance
     }
 
     struct Proposal {
@@ -34,7 +33,7 @@ contract AbsoluteVote is IntVoteInterface {
     }
 
     event AVVoteProposal(bytes32 indexed _proposalId, bool _isOwnerVote);
-    event RefreshReputation(bytes32 indexed _proposalId, bytes32 indexed _organizationId, address indexed _voter,uint _reputation);
+    event RefreshBalance(bytes32 indexed _proposalId, bytes32 indexed _organizationId, address indexed _voter,uint _balance);
 
 
     mapping(bytes32=>Parameters) public parameters;  // A mapping from hashes to parameters
@@ -143,12 +142,12 @@ contract AbsoluteVote is IntVoteInterface {
         return  internalVote(_proposalId, _voter, _vote, 0);
     }
 
-    function voteWithSpecifiedAmounts(bytes32 _proposalId,uint _vote,uint _rep,uint,address) external votable(_proposalId) returns(bool) {
-        return internalVote(_proposalId,msg.sender,_vote,_rep);
+    function voteWithSpecifiedAmounts(bytes32 _proposalId,uint _vote,uint _voteAmount,address) external votable(_proposalId) returns(bool) {
+        return internalVote(_proposalId,msg.sender,_vote,_voteAmount);
     }
 
   /**
-   * @dev Cancel the vote of the msg.sender: subtract the reputation amount from the votes
+   * @dev Cancel the vote of the msg.sender: subtract the voter balance from the votes
    * and delete the voter from the proposal struct
    * @param _proposalId id of the proposal
    */
@@ -166,22 +165,22 @@ contract AbsoluteVote is IntVoteInterface {
     }
 
   /**
-   * @dev voteInfo returns the vote and the amount of reputation of the user committed to this proposal
+   * @dev voteInfo returns the vote and the voter balance of the user committed to this proposal
    * @param _proposalId the ID of the proposal
    * @param _voter the address of the voter
    * @return uint vote - the voters vote
-   *        uint reputation - amount of reputation committed by _voter to _proposalId
+   *        uint balance - voter balance committed by _voter to _proposalId
    */
     function voteInfo(bytes32 _proposalId, address _voter) external view returns(uint, uint) {
         Voter memory voter = proposals[_proposalId].voters[_voter];
-        return (voter.vote, voter.reputation);
+        return (voter.vote, voter.balance);
     }
 
     /**
-     * @dev voteStatus returns the reputation voted for a proposal for a specific voting choice.
+     * @dev voteStatus returns the amount voted for a proposal for a specific voting choice.
      * @param _proposalId the ID of the proposal
      * @param _choice the index in the
-     * @return voted reputation for the given choice
+     * @return amount voted for the given choice
      */
     function voteStatus(bytes32 _proposalId,uint _choice) external view returns(uint) {
         return proposals[_proposalId].votes[_choice];
@@ -246,8 +245,8 @@ contract AbsoluteVote is IntVoteInterface {
     function cancelVoteInternal(bytes32 _proposalId, address _voter) internal {
         Proposal storage proposal = proposals[_proposalId];
         Voter memory voter = proposal.voters[_voter];
-        proposal.votes[voter.vote] = (proposal.votes[voter.vote]).sub(voter.reputation);
-        proposal.totalVotes = (proposal.totalVotes).sub(voter.reputation);
+        proposal.votes[voter.vote] = (proposal.votes[voter.vote]).sub(voter.balance);
+        proposal.totalVotes = (proposal.totalVotes).sub(voter.balance);
         delete proposal.voters[_voter];
         emit CancelVoting(_proposalId, organizations[proposal.organizationId], _voter);
     }
@@ -268,14 +267,14 @@ contract AbsoluteVote is IntVoteInterface {
      */
     function _execute(bytes32 _proposalId) internal votable(_proposalId) returns(bool) {
         Proposal storage proposal = proposals[_proposalId];
-        uint totalReputation = VotingMachineCallbacksInterface(proposal.callbacks).getTotalReputationSupply(_proposalId);
+        uint totalSupply = VotingMachineCallbacksInterface(proposal.callbacks).getTotalSupply(_proposalId);
         uint precReq = parameters[proposal.paramsHash].precReq;
         // Check if someone crossed the bar:
         for (uint cnt = 0; cnt <= proposal.numOfChoices; cnt++) {
-            if (proposal.votes[cnt] > totalReputation*precReq/100) {
+            if (proposal.votes[cnt] > totalSupply*precReq/100) {
                 Proposal memory tmpProposal = proposal;
                 deleteProposal(_proposalId);
-                emit ExecuteProposal(_proposalId, organizations[tmpProposal.organizationId], cnt, totalReputation);
+                emit ExecuteProposal(_proposalId, organizations[tmpProposal.organizationId], cnt, totalSupply);
                 ProposalExecuteInterface(tmpProposal.callbacks).executeProposal(_proposalId,int(cnt));
                 return true;
             }
@@ -292,30 +291,30 @@ contract AbsoluteVote is IntVoteInterface {
      * throws if proposal is not open or if it has been executed
      * NB: executes the proposal if a decision has been reached
      */
-    function internalVote(bytes32 _proposalId, address _voter, uint _vote, uint _rep) private returns(bool) {
+    function internalVote(bytes32 _proposalId, address _voter, uint _vote, uint _voteAmount) private returns(bool) {
         Proposal storage proposal = proposals[_proposalId];
         // Check valid vote:
         require(_vote <= proposal.numOfChoices);
-        // Check voter has enough reputation:
-        uint reputation = VotingMachineCallbacksInterface(proposal.callbacks).reputationOf(_voter,_proposalId);
-        require(reputation >= _rep);
-        uint rep = _rep;
-        if (rep == 0) {
-            rep = reputation;
+        // Check voter has enough amount in its balance:
+        uint balance = VotingMachineCallbacksInterface(proposal.callbacks).balanceOf(_voter,_proposalId);
+        require(balance >= _voteAmount);
+        uint voteAmount = _voteAmount;
+        if (_voteAmount == 0) {
+            voteAmount = balance;
         }
         // If this voter has already voted, first cancel the vote:
-        if (proposal.voters[_voter].reputation != 0) {
+        if (proposal.voters[_voter].balance != 0) {
             cancelVoteInternal(_proposalId, _voter);
         }
         // The voting itself:
-        proposal.votes[_vote] = rep.add(proposal.votes[_vote]);
-        proposal.totalVotes = rep.add(proposal.totalVotes);
+        proposal.votes[_vote] = proposal.votes[_vote].add(voteAmount);
+        proposal.totalVotes = proposal.totalVotes.add(voteAmount);
         proposal.voters[_voter] = Voter({
-            reputation: rep,
+            balance: voteAmount,
             vote: _vote
         });
         // Event:
-        emit VoteProposal(_proposalId, organizations[proposal.organizationId], _voter, _vote, reputation);
+        emit VoteProposal(_proposalId, organizations[proposal.organizationId], _voter, _vote, voteAmount);
         emit AVVoteProposal(_proposalId, (_voter != msg.sender));
         // execute the proposal if this vote was decisive:
         return _execute(_proposalId);

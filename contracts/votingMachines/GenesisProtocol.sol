@@ -2,7 +2,7 @@ pragma solidity ^0.4.25;
 
 import "./IntVoteInterface.sol";
 import { RealMath } from "../libs/RealMath.sol";
-import "./VotingMachineCallbacksInterface.sol";
+import "./GenesisProtocolCallbacksInterface.sol";
 import "./ProposalExecuteInterface.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
@@ -290,7 +290,7 @@ contract GenesisProtocol is IntVoteInterface {
         return false;
     }
 
-    function voteWithSpecifiedAmounts(bytes32 _proposalId,uint _vote,uint _rep,uint,address _voter) external votable(_proposalId) returns(bool) {
+    function voteWithSpecifiedAmounts(bytes32 _proposalId,uint _vote,uint _rep,address _voter) external votable(_proposalId) returns(bool) {
         Proposal storage proposal = proposals[_proposalId];
         Parameters memory params = parameters[proposal.paramsHash];
         address voter;
@@ -518,7 +518,7 @@ contract GenesisProtocol is IntVoteInterface {
             emit Redeem(_proposalId,organizations[proposal.organizationId],_beneficiary,amount);
         }
         if (reputation != 0 ) {
-            VotingMachineCallbacksInterface(proposal.callbacks).mintReputation(reputation,_beneficiary,_proposalId);
+            GenesisProtocolCallbacksInterface(proposal.callbacks).mintReputation(reputation,_beneficiary,_proposalId);
             emit RedeemReputation(_proposalId,organizations[proposal.organizationId],_beneficiary,reputation);
         }
     }
@@ -552,10 +552,10 @@ contract GenesisProtocol is IntVoteInterface {
             }
         }
         if ((potentialAmount != 0)&&
-            (VotingMachineCallbacksInterface(proposal.callbacks).balanceOfStakingToken(stakingToken,_proposalId) >= potentialAmount))
+            (GenesisProtocolCallbacksInterface(proposal.callbacks).balanceOfStakingToken(stakingToken,_proposalId) >= potentialAmount))
         {
             proposal.daoBountyRemain = proposal.daoBountyRemain.sub(potentialAmount);
-            require(VotingMachineCallbacksInterface(proposal.callbacks).stakingTokenTransfer(stakingToken,_beneficiary,potentialAmount,_proposalId));
+            require(GenesisProtocolCallbacksInterface(proposal.callbacks).stakingTokenTransfer(stakingToken,_beneficiary,potentialAmount,_proposalId));
             proposal.stakers[_beneficiary].amountForBounty = 0;
             redeemedAmount = potentialAmount;
             emit RedeemDaoBounty(_proposalId,organizations[proposal.organizationId],_beneficiary,redeemedAmount);
@@ -726,7 +726,7 @@ contract GenesisProtocol is IntVoteInterface {
         Proposal storage proposal = proposals[_proposalId];
         Parameters memory params = parameters[proposal.paramsHash];
         Proposal memory tmpProposal = proposal;
-        uint totalReputation = VotingMachineCallbacksInterface(proposal.callbacks).getTotalReputationSupply(_proposalId);
+        uint totalReputation = GenesisProtocolCallbacksInterface(proposal.callbacks).getTotalSupply(_proposalId);
         uint executionBar = totalReputation * params.preBoostedVoteRequiredPercentage/100;
         ExecutionState executionState = ExecutionState.None;
 
@@ -851,7 +851,7 @@ contract GenesisProtocol is IntVoteInterface {
         Proposal storage proposal = proposals[_proposalId];
 
         // Check voter has enough reputation:
-        uint reputation = VotingMachineCallbacksInterface(proposal.callbacks).reputationOf(_voter,_proposalId);
+        uint reputation = GenesisProtocolCallbacksInterface(proposal.callbacks).balanceOf(_voter,_proposalId);
         require(reputation >= _rep,"reputation >= _rep");
         uint rep = _rep;
         if (rep == 0) {
@@ -892,7 +892,7 @@ contract GenesisProtocol is IntVoteInterface {
         if (proposal.state == ProposalState.PreBoosted) {
             proposal.preBoostedVotes[_vote] = rep.add(proposal.preBoostedVotes[_vote]);
             uint reputationDeposit = (params.votersReputationLossRatio * rep)/100;
-            VotingMachineCallbacksInterface(proposal.callbacks).burnReputation(reputationDeposit,_voter,_proposalId);
+            GenesisProtocolCallbacksInterface(proposal.callbacks).burnReputation(reputationDeposit,_voter,_proposalId);
         }
         // Event:
         emit VoteProposal(_proposalId, organizations[proposal.organizationId], _voter, _vote, rep);

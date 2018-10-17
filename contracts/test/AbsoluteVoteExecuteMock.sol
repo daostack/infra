@@ -27,44 +27,12 @@ contract AbsoluteVoteExecuteMock is Debug,VotingMachineCallbacksInterface,Propos
         transferOwnership(address(_absoluteVote));
     }
 
-    function getTotalReputationSupply(bytes32 _proposalId) external view returns(uint256) {
+    function getTotalSupply(bytes32 _proposalId) external view returns(uint256) {
         return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
-    function mintReputation(uint _amount,address _beneficiary,bytes32)
-    external
-    onlyOwner
-    returns(bool)
-    {
-        return reputation.mint(_beneficiary,_amount);
-    }
-
-    function burnReputation(uint _amount,address _beneficiary,bytes32)
-    external
-    onlyOwner
-    returns(bool)
-    {
-        return reputation.burn(_beneficiary,_amount);
-    }
-
-    function reputationOf(address _owner,bytes32 _proposalId) external view returns(uint) {
+    function balanceOf(address _owner,bytes32 _proposalId) external view returns(uint) {
         return reputation.balanceOfAt(_owner,proposalsBlockNumbers[_proposalId]);
-    }
-
-    function stakingTokenTransfer(StandardToken _stakingToken,address _beneficiary,uint _amount,bytes32)
-    external
-    onlyOwner
-    returns(bool)
-    {
-        return _stakingToken.transfer(_beneficiary,_amount);
-    }
-
-    function balanceOfStakingToken(StandardToken _stakingToken,bytes32)
-    external
-    view
-    returns(uint)
-    {
-        return _stakingToken.balanceOf(this);
     }
 
     function executeProposal(bytes32 _proposalId,int _decision) external returns(bool) {
