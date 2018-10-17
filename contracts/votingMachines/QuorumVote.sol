@@ -19,11 +19,11 @@ contract QuorumVote is AbsoluteVote {
     */
     function _execute(bytes32 _proposalId) internal votable(_proposalId) returns(bool) {
         Proposal storage proposal = proposals[_proposalId];
-        uint totalReputation = VotingMachineCallbacksInterface(proposal.callbacks).getTotalReputationSupply(_proposalId);
+        uint totalSupply = VotingMachineCallbacksInterface(proposal.callbacks).getTotalSupply(_proposalId);
         uint precReq = parameters[proposal.paramsHash].precReq;
 
         // this is the actual voting rule:
-        if (proposal.totalVotes > totalReputation*precReq/100) {
+        if (proposal.totalVotes > totalSupply*precReq/100) {
             uint max;
             uint maxInd;
             for (uint cnt = 1; cnt<=proposal.numOfChoices; cnt++) {
@@ -34,7 +34,7 @@ contract QuorumVote is AbsoluteVote {
             }
             Proposal memory tmpProposal = proposal;
             deleteProposal(_proposalId);
-            emit ExecuteProposal(_proposalId, organizations[tmpProposal.organizationId], maxInd, totalReputation);
+            emit ExecuteProposal(_proposalId, organizations[tmpProposal.organizationId], maxInd, totalSupply);
             ProposalExecuteInterface(tmpProposal.callbacks).executeProposal(_proposalId,int(maxInd));
             return true;
         }

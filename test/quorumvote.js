@@ -495,7 +495,7 @@ contract('QuorumVote', accounts => {
     assert.equal(voteTX.logs[0].args._proposalId, proposalId);
     assert.equal(voteTX.logs[0].args._voter, accounts[0]);
     assert.equal(voteTX.logs[0].args._vote, 1);
-    assert.equal(voteTX.logs[0].args._reputation, reputationArray[0]);
+    assert.equal(voteTX.logs[0].args._balance, reputationArray[0]);
 
     let cancelVoteTX = await quorumVote.cancelVote(proposalId);
     assert.equal(cancelVoteTX.logs.length, 1);
@@ -570,11 +570,11 @@ contract('QuorumVote', accounts => {
     assert.isOk(proposalId);
 
     // Vote with the reputation the I own - should work
-    await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, reputationArray[0], 0,0);
+    await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, reputationArray[0], 0);
 
     // Vote with negative reputation - exception should be raised
     try {
-      await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, -100, 0,0);
+      await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, -100, 0);
       assert(false, 'Vote with -100 reputation voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -582,7 +582,7 @@ contract('QuorumVote', accounts => {
 
     // Vote with more reputation that i own - exception should be raised
     try {
-      await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, (reputationArray[0] + 1), 0,0);
+      await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, (reputationArray[0] + 1), 0);
       assert(false, 'Not enough reputation - voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -592,7 +592,7 @@ contract('QuorumVote', accounts => {
     let BigNumber = require('bignumber.js');
     let bigNum = ((new BigNumber(2)).toPower(254));
     try {
-      await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, bigNum, 0,0);
+      await quorumVote.voteWithSpecifiedAmounts(proposalId, 1, bigNum, 0);
       assert(false, 'Voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -648,7 +648,7 @@ contract('QuorumVote', accounts => {
 
     // Lets try to call voteWithSpecifiedAmounts with invalid proposal id
     try {
-      await quorumVote.voteWithSpecifiedAmounts(helpers.NULL_HASH, 1, 1, 1,0);
+      await quorumVote.voteWithSpecifiedAmounts(helpers.NULL_HASH, 1, 1,0);
       assert(false, 'Invalid proposal ID has been delivered');
     } catch (ex) {
       helpers.assertVMException(ex);

@@ -624,7 +624,7 @@ contract('GenesisProtocol Lite', accounts => {
     assert.equal(voteTX.logs[0].args._proposalId, proposalId);
     assert.equal(voteTX.logs[0].args._voter, accounts[0]);
     assert.equal(voteTX.logs[0].args._vote, 1);
-    assert.equal(voteTX.logs[0].args._reputation, testSetup.reputationArray[0]);
+    assert.equal(voteTX.logs[0].args._balance, testSetup.reputationArray[0]);
   });
 
   it("should log the ExecuteProposal event", async function() {
@@ -836,11 +836,11 @@ contract('GenesisProtocol Lite', accounts => {
 
 
     // Vote with the reputation the I own - should work
-    await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId, 1, testSetup.reputationArray[0], 0,0);
+    await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId, 1, testSetup.reputationArray[0], 0);
 
     // Vote with more reputation that i own - exception should be raised
     try {
-      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId, 1, (testSetup.reputationArray[1] + 1), 0,0,{from:accounts[1]});
+      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId, 1, (testSetup.reputationArray[1] + 1), 0,{from:accounts[1]});
       assert(false, 'Not enough reputation - voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -850,7 +850,7 @@ contract('GenesisProtocol Lite', accounts => {
     let BigNumber = require('bignumber.js');
     let bigNum = ((new BigNumber(2)).toPower(254));
     try {
-      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId, 1, bigNum, 0,0);
+      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId, 1, bigNum, 0);
       assert(false, 'Voting shouldn\'t work');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -890,7 +890,7 @@ contract('GenesisProtocol Lite', accounts => {
 
     // Lets try to call voteWithSpecifiedAmounts with invalid proposal id
     try {
-      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(helpers.NULL_HASH, 1, 1, 1,0);
+      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(helpers.NULL_HASH, 1, 1, 0);
       assert(false, 'Invalid proposal ID has been delivered');
     } catch (ex) {
       helpers.assertVMException(ex);
@@ -1439,7 +1439,7 @@ contract('GenesisProtocol Lite', accounts => {
       await stake(testSetup,proposalId,YES,100,accounts[0]);
       await helpers.increaseTime(50); //get into the quite period
       var yesVotes = await testSetup.genesisProtocol.voteStatus(proposalId,YES);
-      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId,NO,yesVotes,0,0,{from:accounts[2]}); //change winning vote by create a tie.
+      await testSetup.genesisProtocol.voteWithSpecifiedAmounts(proposalId,NO,yesVotes,0, {from:accounts[2]}); //change winning vote by create a tie.
       await helpers.increaseTime(15); //increase time
       await testSetup.genesisProtocol.execute(proposalId);
       var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
@@ -1539,7 +1539,7 @@ contract('GenesisProtocol Lite', accounts => {
       assert.equal(voteTX.logs[0].args._proposalId, proposalId);
       assert.equal(voteTX.logs[0].args._voter, accounts[2]);
       assert.equal(voteTX.logs[0].args._vote, 1);
-      assert.equal(voteTX.logs[0].args._reputation, testSetup.reputationArray[2]);
+      assert.equal(voteTX.logs[0].args._balance, testSetup.reputationArray[2]);
     });
 
     it("quite window double toggling direction", async () => {

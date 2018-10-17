@@ -7,8 +7,8 @@ interface IntVoteInterface {
     modifier votable(bytes32 _proposalId) {revert(); _;}
 
     event NewProposal(bytes32 indexed _proposalId, address indexed _organization, uint _numOfChoices, address _proposer, bytes32 _paramsHash);
-    event ExecuteProposal(bytes32 indexed _proposalId, address indexed _organization, uint _decision, uint _totalReputation);
-    event VoteProposal(bytes32 indexed _proposalId, address indexed _organization, address indexed _voter, uint _vote, uint _reputation);
+    event ExecuteProposal(bytes32 indexed _proposalId, address indexed _organization, uint _decision, uint _totalBalance);
+    event VoteProposal(bytes32 indexed _proposalId, address indexed _organization, address indexed _voter, uint _vote, uint _balance);
     event CancelProposal(bytes32 indexed _proposalId, address indexed _organization );
     event CancelVoting(bytes32 indexed _proposalId, address indexed _organization, address indexed _voter);
 
@@ -39,8 +39,7 @@ interface IntVoteInterface {
     function voteWithSpecifiedAmounts(
         bytes32 _proposalId,
         uint _vote,
-        uint _rep,
-        uint _token,
+        uint _voteAmount,
         address _voter
     )
     external
@@ -53,10 +52,10 @@ interface IntVoteInterface {
     function isVotable(bytes32 _proposalId) external view returns(bool);
 
     /**
-     * @dev voteStatus returns the reputation voted for a proposal for a specific voting choice.
+     * @dev voteStatus returns the amount voted for a proposal for a specific voting choice.
      * @param _proposalId the ID of the proposal
      * @param _choice the index in the
-     * @return voted reputation for the given choice
+     * @return amount voted for the given choice
      */
     function voteStatus(bytes32 _proposalId,uint _choice) external view returns(uint);
 
