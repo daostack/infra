@@ -840,7 +840,7 @@ contract('GenesisProtocol Lite', accounts => {
 
     var repVoted = await helpers.getValueFromLogs(tx, "_reputation");
 
-    assert(repVoted == testSetup.reputationArray[0] / 10, 'Should vote with specified amount');
+    assert.equal(repVoted, testSetup.reputationArray[0] / 10, 'Should vote with specified amount');
 
     // Vote with more reputation that i own - exception should be raised
     try {
