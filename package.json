@@ -55,7 +55,7 @@
     "solc": "^0.4.25",
     "solc-cli": "^0.3.0",
     "solium": "^1.1.8",
-    "truffle": "beta",
+    "truffle": "5.0.0-beta.1",
     "uint32": "^0.2.1",
     "web3-utils": "^1.0.0-beta.36"
   },
