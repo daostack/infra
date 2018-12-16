@@ -7,6 +7,8 @@ import "./ProposalExecuteInterface.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/ECRecovery.sol";
+import "openzeppelin-solidity/contracts/AddressUtils.sol";
+
 
 
 /**
@@ -17,6 +19,7 @@ contract GenesisProtocol is IntVoteInterface {
     using RealMath for int216;
     using RealMath for int256;
     using ECRecovery for bytes32;
+    using AddressUtils for address;
 
     enum ProposalState { None ,Closed, Executed, Qued ,PreBoosted,Boosted,QuietEndingPeriod }
     enum ExecutionState { None, QueBarCrossed,QueTimeOut,PreBoostedBarCrossed, BoostedTimeOut,BoostedBarCrossed }
@@ -113,7 +116,7 @@ contract GenesisProtocol is IntVoteInterface {
       //This will work for a network which already hosted the GEN token on this address (e.g mainnet).
       //If such contract address does not exist in the network (e.g ganache) the contract will use the _stakingToken param as the
       //staking token address.
-        if (isContract(address(GEN_TOKEN_ADDRESS))) {
+        if (address(GEN_TOKEN_ADDRESS).isContract()) {
             stakingToken = StandardToken(GEN_TOKEN_ADDRESS);
         } else {
             stakingToken = _stakingToken;
@@ -918,19 +921,4 @@ contract GenesisProtocol is IntVoteInterface {
                 (pState == ProposalState.Qued)
         );
     }
-
-    /**
-      * @dev isContract check if a given address is a contract address
-      * @param _addr the address to check.
-      * @return bool true or false
-    */
-    function isContract(address _addr) private view returns (bool) {
-        uint32 size;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-          size := extcodesize(_addr)
-        }
-        return (size > 0);
-    }
-
 }
