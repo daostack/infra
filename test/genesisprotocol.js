@@ -1579,5 +1579,51 @@ contract('GenesisProtocol', accounts => {
 
   });
 
+  it("expired", async () => {
+
+    var testSetup = await setup(accounts);
+
+    var proposalId = await propose(testSetup);
+    await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
+    await stake(testSetup,proposalId,YES,100,accounts[0]);
+    try {
+         await testSetup.genesisProtocol.expired(proposalId);
+         assert(false, 'cannot call expiered if not expiered');
+       } catch (ex) {
+         helpers.assertVMException(ex);
+       }
+    var addTime =15 ;
+    await helpers.increaseTime(60+addTime);
+    var tx = await testSetup.genesisProtocol.expired(proposalId);
+
+    assert.equal(tx.logs[2].event, "ExpirationCallBounty");
+    assert.equal(tx.logs[2].args._proposalId, proposalId);
+    assert.equal(tx.logs[2].args._beneficiary, accounts[0]);
+    assert.equal(tx.logs[2].args._amount, 1 + addTime/15);
+  });
+
+
+  it("expired max (100)", async () => {
+
+    var testSetup = await setup(accounts);
+    var proposalId = await propose(testSetup);
+    await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
+
+    await stake(testSetup,proposalId,YES,100,accounts[0]);
+    try {
+         await testSetup.genesisProtocol.expired(proposalId);
+         assert(false, 'cannot call expiered if not expiered');
+       } catch (ex) {
+         helpers.assertVMException(ex);
+       }
+    var addTime =15*100 ;
+    await helpers.increaseTime(60+addTime);
+    var tx = await testSetup.genesisProtocol.expired(proposalId);
+
+    assert.equal(tx.logs[2].event, "ExpirationCallBounty");
+    assert.equal(tx.logs[2].args._proposalId, proposalId);
+    assert.equal(tx.logs[2].args._beneficiary, accounts[0]);
+    assert.equal(tx.logs[2].args._amount, 100);
+  });
 
 });

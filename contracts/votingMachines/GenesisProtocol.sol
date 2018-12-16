@@ -80,7 +80,7 @@ contract GenesisProtocol is IntVoteInterface {
     event RedeemDaoBounty(bytes32 indexed _proposalId, address indexed _organization, address indexed _beneficiary,uint _amount);
     event RedeemReputation(bytes32 indexed _proposalId, address indexed _organization, address indexed _beneficiary,uint _amount);
     event GPExecuteProposal(bytes32 indexed _proposalId, ExecutionState _executionState);
-    event ExpirationCallBounty(bytes32 indexed _proposalId, address indexed _beneficiary,uint amount);
+    event ExpirationCallBounty(bytes32 indexed _proposalId, address indexed _beneficiary,uint _amount);
 
     mapping(bytes32=>Parameters) public parameters;  // A mapping from hashes to parameters
     mapping(bytes32=>Proposal) public proposals; // Mapping from the ID of the proposal to the proposal itself.
@@ -460,7 +460,7 @@ contract GenesisProtocol is IntVoteInterface {
         require(proposal.state == ProposalState.Boosted);
         require(_execute(_proposalId));
         // solium-disable-next-line security/no-block-members
-        uint expirationCallBountyPercentage = (1 + now.sub(proposal.currentBoostedVotePeriodLimit).div(15));
+        uint expirationCallBountyPercentage = (1 + now.sub(proposal.currentBoostedVotePeriodLimit + proposal.times[1]).div(15));
         if (expirationCallBountyPercentage > 100) {
             expirationCallBountyPercentage = 100;
         }
