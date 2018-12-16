@@ -44,7 +44,6 @@ contract GenesisProtocol is IntVoteInterface {
     struct Staker {
         uint vote; // YES(1) ,NO(2)
         uint amount; // amount of staker's stake
-        //uint amountForBounty; // amount of staker's stake which will be use for bounty calculation
     }
 
     struct Proposal {
@@ -486,7 +485,6 @@ contract GenesisProtocol is IntVoteInterface {
         Proposal storage proposal = proposals[_proposalId];
         require((proposal.state == ProposalState.Executed) || (proposal.state == ProposalState.Closed),"wrong proposal state");
         Parameters memory params = parameters[proposal.paramsHash];
-      //  uint reputation;
         uint lostReputation;
         if (proposal.winningVote == YES) {
             lostReputation = proposal.preBoostedVotes[NO];
@@ -811,7 +809,6 @@ contract GenesisProtocol is IntVoteInterface {
         require(stakingToken.transferFrom(_staker, address(this), amount));
         proposal.totalStakes = proposal.totalStakes.add(amount); //update totalRedeemableStakes
         staker.amount += amount;
-      //  staker.amountForBounty = staker.amount;
         staker.vote = _vote;
 
         proposal.stakes[_vote] = amount.add(proposal.stakes[_vote]);
