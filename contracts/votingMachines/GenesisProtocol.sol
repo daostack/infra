@@ -44,6 +44,7 @@ contract GenesisProtocol is IntVoteInterface {
     struct Staker {
         uint vote; // YES(1) ,NO(2)
         uint amount; // amount of staker's stake
+        uint amount4Bounty;
     }
 
     struct Proposal {
@@ -510,7 +511,7 @@ contract GenesisProtocol is IntVoteInterface {
                         }
                  }
           }
-            staker.amount = staker.amount.sub(rewards[0]);
+            staker.amount = 0;
         }
         //as voter
         Voter storage voter = proposal.voters[_beneficiary];
@@ -557,16 +558,18 @@ contract GenesisProtocol is IntVoteInterface {
         Staker storage staker = proposal.stakers[_beneficiary];
         if (
           // solium-disable-next-line operator-whitespace
+            (staker.amount4Bounty > 0)&&
             (staker.vote == proposal.winningVote)&&
             (proposal.winningVote == YES)&&
             (totalWinningStakes != 0))
         {
             //as staker
-            potentialAmount = (staker.amount * proposal.daoBounty)/totalWinningStakes;
+            potentialAmount = (staker.amount4Bounty * proposal.daoBounty)/totalWinningStakes;
         }
         if ((potentialAmount != 0)&&
             (VotingMachineCallbacksInterface(proposal.callbacks).balanceOfStakingToken(stakingToken,_proposalId) >= potentialAmount))
         {
+            staker.amount4Bounty = 0;
             proposal.daoBountyRemain = proposal.daoBountyRemain.sub(potentialAmount);
             require(VotingMachineCallbacksInterface(proposal.callbacks).stakingTokenTransfer(stakingToken,_beneficiary,potentialAmount,_proposalId));
             redeemedAmount = potentialAmount;
@@ -809,6 +812,9 @@ contract GenesisProtocol is IntVoteInterface {
         require(stakingToken.transferFrom(_staker, address(this), amount));
         proposal.totalStakes = proposal.totalStakes.add(amount); //update totalRedeemableStakes
         staker.amount += amount;
+        if (_vote == YES) {
+            staker.amount4Bounty += amount;
+        }
         staker.vote = _vote;
 
         proposal.stakes[_vote] = amount.add(proposal.stakes[_vote]);

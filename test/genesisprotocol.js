@@ -267,7 +267,7 @@ const stake = async function(_testSetup,_proposalId,_vote,_amount,_staker) {
 
 
 contract('GenesisProtocol', accounts => {
-
+  
   it("staking token address", async() => {
     var testSetup = await setup(accounts);
     assert.equal(await testSetup.genesisProtocol.stakingToken(),testSetup.stakingToken.address);
@@ -1588,7 +1588,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
     try {
          await testSetup.genesisProtocol.expired(proposalId);
-         assert(false, 'cannot call expiered if not expiered');
+         assert(false, 'cannot call expired if not expired');
        } catch (ex) {
          helpers.assertVMException(ex);
        }
@@ -1600,6 +1600,19 @@ contract('GenesisProtocol', accounts => {
     assert.equal(tx.logs[2].args._proposalId, proposalId);
     assert.equal(tx.logs[2].args._beneficiary, accounts[0]);
     assert.equal(tx.logs[2].args._amount, 1 + addTime/15);
+
+    var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
+    var redeemToken = redeemRewards[0].toNumber();
+
+    var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
+    var expirationCallBountyPercentage = proposalInfo[11];
+    assert.equal(expirationCallBountyPercentage,1 + addTime/15);
+
+    var daoBounty =  15;
+    var totalStakes = 100 + daoBounty;
+
+    assert.equal(redeemToken,Math.floor(((totalStakes*(100-expirationCallBountyPercentage))/100)-daoBounty));
+
   });
 
 
@@ -1608,18 +1621,10 @@ contract('GenesisProtocol', accounts => {
     var testSetup = await setup(accounts);
     var proposalId = await propose(testSetup);
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
-
     await stake(testSetup,proposalId,YES,100,accounts[0]);
-    try {
-         await testSetup.genesisProtocol.expired(proposalId);
-         assert(false, 'cannot call expiered if not expiered');
-       } catch (ex) {
-         helpers.assertVMException(ex);
-       }
     var addTime =15*100 ;
     await helpers.increaseTime(60+addTime);
     var tx = await testSetup.genesisProtocol.expired(proposalId);
-
     assert.equal(tx.logs[2].event, "ExpirationCallBounty");
     assert.equal(tx.logs[2].args._proposalId, proposalId);
     assert.equal(tx.logs[2].args._beneficiary, accounts[0]);
