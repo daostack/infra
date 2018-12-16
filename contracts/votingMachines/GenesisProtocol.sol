@@ -532,7 +532,6 @@ contract GenesisProtocol is IntVoteInterface {
             rewards[2] = params.proposingRepRewardConstA;
             proposal.proposer = 0;
         }
-      //  reputation = rewards[1] + rewards[2];
         if (rewards[0] != 0) {
             proposal.totalStakes = proposal.totalStakes.sub(rewards[0]);
             require(stakingToken.transfer(_beneficiary, rewards[0]));
@@ -593,7 +592,7 @@ contract GenesisProtocol is IntVoteInterface {
      * @return uint proposal score.
      */
     function score(bytes32 _proposalId) public view returns(int) {
-        return _score(_proposalId);
+        return  _score(_proposalId);
     }
 
     /**
@@ -754,16 +753,22 @@ contract GenesisProtocol is IntVoteInterface {
             // solium-disable-next-line security/no-block-members
             if ((now - proposal.times[1]) >= proposal.currentBoostedVotePeriodLimit) {
                 proposal.state = ProposalState.Executed;
-                orgBoostedProposalsCnt[tmpProposal.organizationId] = orgBoostedProposalsCnt[tmpProposal.organizationId].sub(1);
-                //remove a value from average = ((average * nbValues) - value) / (nbValues - 1);
-                averageBoostDownstakes = averagesBoostDownstakes[proposal.organizationId];
-                uint boostedProposals = orgBoostedProposalsCnt[tmpProposal.organizationId];
-                averagesBoostDownstakes[proposal.organizationId] = uint256(int216(averageBoostDownstakes.mul(boostedProposals+1).sub(proposal.stakes[NO])).toReal().div(int216(boostedProposals).toReal()).fromReal());
                 executionState = ExecutionState.BoostedTimeOut;
-                }
+            }
           }
 
         if (executionState != ExecutionState.None) {
+            if ((executionState == ExecutionState.BoostedTimeOut) || (executionState == ExecutionState.BoostedBarCrossed)) {
+                orgBoostedProposalsCnt[tmpProposal.organizationId] = orgBoostedProposalsCnt[tmpProposal.organizationId].sub(1);
+                //remove a value from average = ((average * nbValues) - value) / (nbValues - 1);
+                uint boostedProposals = orgBoostedProposalsCnt[tmpProposal.organizationId];
+                if (boostedProposals == 0) {
+                    averagesBoostDownstakes[proposal.organizationId] = 0;
+                } else {
+                    averageBoostDownstakes = averagesBoostDownstakes[proposal.organizationId];
+                    averagesBoostDownstakes[proposal.organizationId] = uint256(int216(averageBoostDownstakes.mul(boostedProposals+1).sub(proposal.stakes[NO])).toReal().div(int216(boostedProposals).toReal()).fromReal());
+                }
+            }
             emit ExecuteProposal(_proposalId, organizations[proposal.organizationId], proposal.winningVote, totalReputation);
             emit GPExecuteProposal(_proposalId, executionState);
             ProposalExecuteInterface(proposal.callbacks).executeProposal(_proposalId,int(proposal.winningVote));
@@ -810,7 +815,6 @@ contract GenesisProtocol is IntVoteInterface {
         staker.vote = _vote;
 
         proposal.stakes[_vote] = amount.add(proposal.stakes[_vote]);
-        //proposal.totalStakes[0] = amount.add(proposal.totalStakes[0]);
       // Event:
         emit Stake(_proposalId, organizations[proposal.organizationId], _staker, _vote, _amount);
       // execute the proposal if this vote was decisive:
