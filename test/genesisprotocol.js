@@ -19,7 +19,7 @@ const setupGenesisProtocolParams = async function(
                                             _quedVotePeriodLimit=60,
                                             _boostedVotePeriodLimit=60,
                                             _preBoostedVotePeriodLimit =0,
-                                            _thresholdConstA=web3.utils.toWei("10"),
+                                            _thresholdConstA=2000,
                                             _quietEndingPeriod=0,
                                             _proposingRepRewardConstA=60,
                                             _votersReputationLossRatio=10,
@@ -59,7 +59,7 @@ const setup = async function (accounts,
                               _quedVotePeriodLimit=60,
                               _boostedVotePeriodLimit=60,
                               _preBoostedVotePeriodLimit =0,
-                              _thresholdConstA=web3.utils.toWei("10"),
+                              _thresholdConstA=2000,
                               _quietEndingPeriod=0,
                               _proposingRepRewardConstA=60,
                               _votersReputationLossRatio=10,
@@ -362,7 +362,7 @@ contract('GenesisProtocol', accounts => {
   it("check organization params validity", async function() {
     var quedVoteRequiredPercentage = 0;
     var votersReputationLossRatio = 1;
-    var thresholdConstA = web3.utils.toWei("10");
+    var thresholdConstA = 2000;
 
     try {
       await setup(accounts,
@@ -445,7 +445,7 @@ contract('GenesisProtocol', accounts => {
     } catch(error) {
       helpers.assertVMException(error);
     }
-    thresholdConstA = web3.utils.toWei("10");
+    thresholdConstA = 2000;
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
@@ -819,7 +819,7 @@ contract('GenesisProtocol', accounts => {
   });
 
   it("check nonce ", async () => {
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"));
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
     var proposalId = await propose(testSetup);
 
     let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
@@ -854,7 +854,7 @@ contract('GenesisProtocol', accounts => {
 
   it("check stake with wrong signature ", async () => {
 
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"));
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
 
     var proposalId = await propose(testSetup);
 
@@ -881,7 +881,7 @@ contract('GenesisProtocol', accounts => {
 
   it("multiple stakes ", async () => {
 
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"));
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
 
     var proposalId = await propose(testSetup);
 
@@ -1005,24 +1005,16 @@ contract('GenesisProtocol', accounts => {
 
   it("shouldBoost ", async () => {
     var testSetup = await setup(accounts);
-
     var proposalId = await propose(testSetup);
-
-
     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
-
     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
     assert.equal(await testSetup.genesisProtocol.score(proposalId),0);
     await stake(testSetup,proposalId,YES,100,accounts[0]);
-
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
     assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),true);
     assert.equal(await testSetup.genesisProtocol.score(proposalId),6);
 
   });
@@ -1123,7 +1115,7 @@ contract('GenesisProtocol', accounts => {
 
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
     await stake(testSetup,proposalId,YES,100,accounts[0]);
-    assert.equal(await threshold(testSetup),web3.utils.toWei("10"));
+    assert.equal(await threshold(testSetup),2);
 
   });
 
@@ -1176,11 +1168,11 @@ contract('GenesisProtocol', accounts => {
       helpers.assertVMException(ex);
     }
   });
-  //
+
     it("dynamic threshold ", async () => {
       var testSetup = await setup(accounts);
 
-      var thresholdConstA = web3.utils.toWei("10");
+      var thresholdConstA = 2000/1000;
 
 
       var proposalId = await propose(testSetup);
@@ -1221,7 +1213,7 @@ contract('GenesisProtocol', accounts => {
 
 
       var votersReputationLossRatio=20;
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"),0,60,votersReputationLossRatio,15,10);
+      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,votersReputationLossRatio,15,10);
 
       var proposalId = await propose(testSetup,proposer);
 
@@ -1280,7 +1272,7 @@ contract('GenesisProtocol', accounts => {
     it("quite window ", async () => {
       var quietEndingPeriod = 20;
 
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"),quietEndingPeriod,60,10,15,10);
+      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
 
       var proposalId = await propose(testSetup);
 
@@ -1292,10 +1284,10 @@ contract('GenesisProtocol', accounts => {
       assert.equal(proposalInfo[proposalStateIndex],boostedState);//boosted
 
       await helpers.increaseTime(50); //get into the quite period
-      assert.equal(await threshold(testSetup),web3.utils.toWei("10"));
+      assert.equal(await threshold(testSetup),2);
 
       await testSetup.genesisProtocol.vote(proposalId,NO,helpers.NULL_ADDRESS,{from:accounts[0]}); //change winning vote
-      assert.equal(await threshold(testSetup),web3.utils.toWei("10"));
+      assert.equal(await threshold(testSetup),2);
 
       proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
       assert.equal(proposalInfo[proposalStateIndex],6);//quietEndingPeriod -still not execute
@@ -1323,7 +1315,7 @@ contract('GenesisProtocol', accounts => {
     it("quite window with tie ", async () => {
       var quietEndingPeriod = 20;
 
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"),quietEndingPeriod,60,10,15,10);
+      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
 
       var proposalId = await propose(testSetup);
       await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS,{from:accounts[1]});
@@ -1344,7 +1336,7 @@ contract('GenesisProtocol', accounts => {
 
     it("scoreThresholdParams and getProposalOrganization", async () => {
 
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("8"),0,60,10,15,10);
+      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,10,15,10);
 
       var proposalId = await propose(testSetup);
       const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
@@ -1437,7 +1429,7 @@ contract('GenesisProtocol', accounts => {
     it("quite window double toggling direction", async () => {
     var quietEndingPeriod = 60;
 
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,web3.utils.toWei("10"),quietEndingPeriod,60,10,15,10);
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
 
     var proposalId = await propose(testSetup);
     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
@@ -1543,9 +1535,9 @@ contract('GenesisProtocol', accounts => {
     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
 
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
+    await stake(testSetup,proposalId,YES,30,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],30+15); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
 
     //boost another proposal
@@ -1565,12 +1557,12 @@ contract('GenesisProtocol', accounts => {
     //try to execute proposalId
     await testSetup.genesisProtocol.execute(proposalId);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //still preboosted
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //still preBoosted
 
-    assert.equal(await threshold(testSetup),web3.utils.toWei("10"));
+    assert.equal(await threshold(testSetup),2);
 
     var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    assert.equal(proposalStatus[2],100);
+    assert.equal(proposalStatus[2],30);
     assert.equal(proposalStatus[3],15);
 
     await stake(testSetup,proposalId,YES,web3.utils.toWei("3000"),accounts[0]);

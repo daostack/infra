@@ -60,7 +60,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint daoBounty;
         uint totalStakes;// totalStakes[0] - (amount staked minus fee) - Total number of tokens staked which can be redeemable by stakers.
                            // totalStakes[1] - (amount staked) - Total number of redeemable tokens.
-        int threshold;
+        uint threshold;
         uint expirationCallBountyPercentage;
         uint[3] times; //times[0] - sumbmittedTime
                        //times[1] - boostedPhaseTime
@@ -303,8 +303,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
      * @return bool true or false.
      */
     function shouldBoost(bytes32 _proposalId) public view returns(bool) {
-        Proposal memory proposal = proposals[_proposalId];
-        return (_score(_proposalId) > threshold(proposal.paramsHash,proposal.organizationId));
+        Proposal storage proposal = proposals[_proposalId];
+        return (proposal.stakes[YES] > proposal.stakes[NO].mul(threshold(proposal.paramsHash,proposal.organizationId)));
     }
 
     /**
@@ -315,8 +315,9 @@ contract GenesisProtocolLogic is IntVoteInterface {
      * @param _paramsHash the organization parameters hash
      * @return int organization's score threshold.
      */
-    function threshold(bytes32 _paramsHash,bytes32 _organizationId) public view returns(int) {
-        return int216(parameters[_paramsHash].thresholdConstA).toReal().pow(int216(orgBoostedProposalsCnt[_organizationId]).toReal()).fromReal();
+    function threshold(bytes32 _paramsHash,bytes32 _organizationId) public view returns(uint) {
+        int alpha = int216(parameters[_paramsHash].thresholdConstA).toReal().div(int216(1000).toReal());
+        return uint(int216(alpha).pow(int216(orgBoostedProposalsCnt[_organizationId]).toReal()).fromReal());
     }
 
     /**
@@ -342,7 +343,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     returns(bytes32)
     {
         require(_params[0] <= 100 && _params[0] >= 50,"50 <= quedVoteRequiredPercentage <= 100");
-        require(_params[4] <= 100000000 ether && _params[4] > 1 ether,"1 < thresholdConstA <= 100000000 GEN");
+        require(_params[4] <= 100000 && _params[4] > 1000,"1000 < thresholdConstA <= 100000");
         require(_params[7] <= 100,"votersReputationLossRatio <= 100");
         require(_params[2] >= _params[5],"boostedVotePeriodLimit >= quietEndingPeriod");
         require(_params[8] > 0,"minimumDaoBounty should be > 0");
@@ -453,7 +454,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                         averagesBoostDownstakes[proposal.organizationId] = uint256(int256(averageBoostDownstakes) + ((int216(proposal.stakes[NO])-int216(averageBoostDownstakes)).toReal().div(int216(orgBoostedProposalsCnt[proposal.organizationId]).toReal())).fromReal());
                  }
                } else { //check the Confidence level is stable
-                    if (_score(_proposalId) <= proposal.threshold) {
+                    if (proposal.stakes[YES] <= proposal.threshold.mul(proposal.stakes[NO])) {
                         proposal.state = ProposalState.Qued;
                     }
                }
