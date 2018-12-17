@@ -28,7 +28,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint quedVotePeriodLimit; //the time limit for a proposal to be in an absolute voting mode.
         uint boostedVotePeriodLimit; //the time limit for a proposal to be in an relative voting mode.
         uint preBoostedVotePeriodLimit; //the time limit for a proposal to be in an preparation state (stable) before boosted.
-        uint thresholdConstA;//constant A for threshold calculation . threshold =A * (e ** (numberOfBoostedProposals/B))
+        int thresholdConstA; //constant A for threshold calculation . threshold =A ** (numberOfBoostedProposals)
         uint quietEndingPeriod; //quite ending period
         uint proposingRepRewardConstA;//constant A for calculate proposer reward. proposerReward =(A*(RTotal) +B*(R+ - R-))/1000
         uint votersReputationLossRatio;//Unsuccessful pre booster voters lose votersReputationLossRatio% of their reputation.
@@ -313,11 +313,14 @@ contract GenesisProtocolLogic is IntVoteInterface {
      * This threshold is dynamically set and it depend on the number of boosted proposal.
      * @param _organizationId the organization identifier
      * @param _paramsHash the organization parameters hash
-     * @return int organization's score threshold.
+     * @return uint organization's score threshold.
      */
     function threshold(bytes32 _paramsHash,bytes32 _organizationId) public view returns(uint) {
-        int alpha = int216(parameters[_paramsHash].thresholdConstA).toReal().div(int216(1000).toReal());
-        return uint(int216(alpha).pow(int216(orgBoostedProposalsCnt[_organizationId]).toReal()).fromReal());
+        int256 power = int216(orgBoostedProposalsCnt[_organizationId]).toReal();
+        if (power.fromReal() > 100 ) {
+            power = int216(100).toReal();
+        }
+        return uint(parameters[_paramsHash].thresholdConstA.pow(power).fromReal());
     }
 
     /**
@@ -357,7 +360,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             quedVotePeriodLimit: _params[1],
             boostedVotePeriodLimit: _params[2],
             preBoostedVotePeriodLimit: _params[3],
-            thresholdConstA:_params[4],
+            thresholdConstA:int216(_params[4]).fraction(int216(1000)),
             quietEndingPeriod: _params[5],
             proposingRepRewardConstA: _params[6],
             votersReputationLossRatio:_params[7],

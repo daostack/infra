@@ -1,7 +1,5 @@
 pragma solidity ^0.4.25;
 
-import "./IntVoteInterface.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/ECRecovery.sol";
 import "./GenesisProtocolLogic.sol";
 
