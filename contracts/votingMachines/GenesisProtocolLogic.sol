@@ -29,6 +29,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint boostedVotePeriodLimit; //the time limit for a proposal to be in an relative voting mode.
         uint preBoostedVotePeriodLimit; //the time limit for a proposal to be in an preparation state (stable) before boosted.
         int thresholdConstA; //constant A for threshold calculation . threshold =A ** (numberOfBoostedProposals)
+        uint limitExponentValue;
         uint quietEndingPeriod; //quite ending period
         uint proposingRepRewardConstA;//constant A for calculate proposer reward. proposerReward =(A*(RTotal) +B*(R+ - R-))/1000
         uint votersReputationLossRatio;//Unsuccessful pre booster voters lose votersReputationLossRatio% of their reputation.
@@ -317,10 +318,13 @@ contract GenesisProtocolLogic is IntVoteInterface {
      */
     function threshold(bytes32 _paramsHash,bytes32 _organizationId) public view returns(uint) {
         int256 power = int216(orgBoostedProposalsCnt[_organizationId]).toReal();
-        if (power.fromReal() > 100 ) {
-            power = int216(100).toReal();
+        Parameters storage params = parameters[_paramsHash];
+
+        if (power.fromReal() > int(params.limitExponentValue) ) {
+            power = int216(params.limitExponentValue).toReal();
         }
-        return uint(parameters[_paramsHash].thresholdConstA.pow(power).fromReal());
+
+        return uint(params.thresholdConstA.pow(power).fromReal());
     }
 
     /**
@@ -346,7 +350,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     returns(bytes32)
     {
         require(_params[0] <= 100 && _params[0] >= 50,"50 <= quedVoteRequiredPercentage <= 100");
-        require(_params[4] <= 100000 && _params[4] > 1000,"1000 < thresholdConstA <= 100000");
+        require(_params[4] <= 16000 && _params[4] > 1000,"1000 < thresholdConstA <= 16000");
         require(_params[7] <= 100,"votersReputationLossRatio <= 100");
         require(_params[2] >= _params[5],"boostedVotePeriodLimit >= quietEndingPeriod");
         require(_params[8] > 0,"minimumDaoBounty should be > 0");
@@ -354,13 +358,25 @@ contract GenesisProtocolLogic is IntVoteInterface {
 
         bytes32 paramsHash = getParametersHash(_params, _voteOnBehalf);
 
+        int alpha = int216(_params[4]).fraction(int216(1000));
+        //set a limit for power for a given alpha to prevent overflow
+        uint limitExponent = 172;//for alpha less or equal 2
+        uint j = 2;
+        for (uint i = 2;i < 16 ;i = i*2) {
+            if ((uint(alpha.fromReal()) > i) && (uint(alpha.fromReal()) <= i*2)) {
+                limitExponent = limitExponent/j;
+                break;
+             }
+            j++;
+        }
 
         parameters[paramsHash] = Parameters({
             quedVoteRequiredPercentage: _params[0],
             quedVotePeriodLimit: _params[1],
             boostedVotePeriodLimit: _params[2],
             preBoostedVotePeriodLimit: _params[3],
-            thresholdConstA:int216(_params[4]).fraction(int216(1000)),
+            thresholdConstA:alpha,
+            limitExponentValue:limitExponent,
             quietEndingPeriod: _params[5],
             proposingRepRewardConstA: _params[6],
             votersReputationLossRatio:_params[7],
