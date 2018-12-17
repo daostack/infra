@@ -20,7 +20,8 @@ const setupGenesisProtocol = async function (accounts,_voteOnBehalf = helpers.NU
                                               _proposingRepRewardConstA=60,
                                               _votersReputationLossRatio=10,
                                               _minimumDaoBounty=15,
-                                              _daoBountyConst=10) {
+                                              _daoBountyConst=10,
+                                              _activationTime=0) {
    var testSetup = new helpers.TestSetup();
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],3000);
    testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
@@ -49,7 +50,8 @@ const setupGenesisProtocol = async function (accounts,_voteOnBehalf = helpers.NU
                                          _proposingRepRewardConstA,
                                          _votersReputationLossRatio,
                                          _minimumDaoBounty,
-                                         _daoBountyConst);
+                                         _daoBountyConst,
+                                         _activationTime);
 
 
    return testSetup;
@@ -73,7 +75,8 @@ const setupGenesisProtocolParams = async function(
                                             _proposingRepRewardConstA=60,
                                             _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
-                                            _daoBountyConst=10
+                                            _daoBountyConst=10,
+                                            _activationTime=0
                                             ) {
   var genesisProtocolParams = new GenesisProtocolParams();
   await testSetup.genesisProtocolCallbacks.setParameters([_quedVoteRequiredPercentage,
@@ -85,7 +88,8 @@ const setupGenesisProtocolParams = async function(
                                                           _proposingRepRewardConstA,
                                                           _votersReputationLossRatio,
                                                           _minimumDaoBounty,
-                                                          _daoBountyConst],voteOnBehalf);
+                                                          _daoBountyConst,
+                                                         _activationTime],voteOnBehalf);
   genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_quedVoteRequiredPercentage,
                                                           _quedVotePeriodLimit,
                                                           _boostedVotePeriodLimit,
@@ -95,7 +99,8 @@ const setupGenesisProtocolParams = async function(
                                                           _proposingRepRewardConstA,
                                                           _votersReputationLossRatio,
                                                           _minimumDaoBounty,
-                                                          _daoBountyConst],voteOnBehalf);
+                                                          _daoBountyConst,
+                                                          _activationTime],voteOnBehalf);
   return genesisProtocolParams;
 };
 

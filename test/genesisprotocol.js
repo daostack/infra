@@ -24,7 +24,8 @@ const setupGenesisProtocolParams = async function(
                                             _proposingRepRewardConstA=60,
                                             _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
-                                            _daoBountyConst=10
+                                            _daoBountyConst=10,
+                                            _activationTime=0,
                                             ) {
   var genesisProtocolParams = new GenesisProtocolParams();
   await testSetup.genesisProtocolCallbacks.setParameters([_quedVoteRequiredPercentage,
@@ -36,7 +37,8 @@ const setupGenesisProtocolParams = async function(
                                                           _proposingRepRewardConstA,
                                                           _votersReputationLossRatio,
                                                           _minimumDaoBounty,
-                                                          _daoBountyConst],
+                                                          _daoBountyConst,
+                                                          _activationTime],
                                                  voteOnBehalf);
   genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_quedVoteRequiredPercentage,
                                                           _quedVotePeriodLimit,
@@ -47,7 +49,8 @@ const setupGenesisProtocolParams = async function(
                                                           _proposingRepRewardConstA,
                                                           _votersReputationLossRatio,
                                                           _minimumDaoBounty,
-                                                          _daoBountyConst],
+                                                          _daoBountyConst,
+                                                          _activationTime],
                                                  voteOnBehalf);
   return genesisProtocolParams;
 };
@@ -64,7 +67,8 @@ const setup = async function (accounts,
                               _proposingRepRewardConstA=60,
                               _votersReputationLossRatio=10,
                               _minimumDaoBounty=15,
-                              _daoBountyConst=10) {
+                              _daoBountyConst=10,
+                              _activationTime=0) {
    var testSetup = new helpers.TestSetup();
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],web3.utils.toWei("100000000"));
    testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
@@ -90,7 +94,8 @@ const setup = async function (accounts,
                                                                      _proposingRepRewardConstA,
                                                                      _votersReputationLossRatio,
                                                                      _minimumDaoBounty,
-                                                                     _daoBountyConst);
+                                                                     _daoBountyConst,
+                                                                     _activationTime);
     YES = await testSetup.genesisProtocol.YES();
     YES = YES.toNumber();
     NO = await testSetup.genesisProtocol.NO();
@@ -1630,5 +1635,29 @@ contract('GenesisProtocol', accounts => {
     assert.equal(tx.logs[2].args._beneficiary, accounts[0]);
     assert.equal(tx.logs[2].args._amount, 100);
   });
+  it("activation time", async () => {
+    var activationTime = (await web3.eth.getBlock("latest")).timestamp + 1000;
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,10,15,10,activationTime);
+
+    try {
+           await propose(testSetup);
+           assert(false, 'not active yet');
+        } catch (ex) {
+           helpers.assertVMException(ex);
+     }
+     await helpers.increaseTime(500);
+
+     try {
+            await propose(testSetup);
+            assert(false, 'not active yet');
+         } catch (ex) {
+            helpers.assertVMException(ex);
+      }
+      await helpers.increaseTime(501);
+
+      await propose(testSetup);
+
+  });
+
 
 });

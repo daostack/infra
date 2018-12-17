@@ -35,6 +35,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint votersReputationLossRatio;//Unsuccessful pre booster voters lose votersReputationLossRatio% of their reputation.
         uint minimumDaoBounty;
         uint daoBountyConst;
+        uint activationTime;//the activation time of the voting machine.
         address voteOnBehalf; //this address is allowed to vote of behalf of someone else.
     }
     struct Voter {
@@ -134,6 +135,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         external
         returns(bytes32)
     {
+      // solium-disable-next-line security/no-block-members
+        require(now > parameters[_paramsHash].activationTime,"not active yet");
         //Check parameters existence.
         require(parameters[_paramsHash].quedVoteRequiredPercentage > 0);
             // Generate a unique ID:
@@ -340,10 +343,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
      *    _params[7] -_votersReputationLossRatio
      *    _params[8] -_minimumDaoBounty
      *    _params[9] -_daoBountyConst
+     *    _params[10] -_activationTime
      * @param _voteOnBehalf - authorized to vote on behalf of others.
     */
     function setParameters(
-        uint[10] _params, //use array here due to stack too deep issue.
+        uint[11] _params, //use array here due to stack too deep issue.
         address _voteOnBehalf
     )
     public
@@ -382,6 +386,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             votersReputationLossRatio:_params[7],
             minimumDaoBounty:_params[8],
             daoBountyConst:_params[9],
+            activationTime:_params[10],
             voteOnBehalf:_voteOnBehalf
         });
         return paramsHash;
@@ -391,7 +396,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
    * @dev hashParameters returns a hash of the given parameters
    */
     function getParametersHash(
-        uint[10] _params,//use array here due to stack too deep issue.
+        uint[11] _params,//use array here due to stack too deep issue.
         address _voteOnBehalf
     )
         public
@@ -412,7 +417,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 _params[6],
                 _params[7],
                 _params[8],
-                _params[9]
+                _params[9],
+                _params[10]
              )),
             _voteOnBehalf
         ));
