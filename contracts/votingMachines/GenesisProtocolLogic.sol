@@ -35,7 +35,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint votersReputationLossRatio;//Unsuccessful pre booster voters lose votersReputationLossRatio% of their reputation.
         uint minimumDaoBounty;
         uint daoBountyConst;
-        uint activationTime;// the activation time of the voting machine.
+        uint activationTime;//the point in time after which proposals can be created.
         address voteOnBehalf; //this address is allowed to vote of behalf of someone else.
     }
     struct Voter {
