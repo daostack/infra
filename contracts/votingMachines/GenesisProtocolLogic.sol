@@ -267,7 +267,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     }
 
     /**
-     * @dev redeemDaoBounty a reward for a successful stake, vote or proposing.
+     * @dev redeemDaoBounty a reward for a successful stake.
      * The function use a beneficiary address as a parameter (and not msg.sender) to enable
      * users to redeem on behalf of someone else.
      * @param _proposalId the ID of the proposal
