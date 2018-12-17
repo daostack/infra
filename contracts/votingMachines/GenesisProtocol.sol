@@ -304,7 +304,7 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
      * @param _proposalId the ID of the proposal
      * @return uint proposal score.
      */
-    function score(bytes32 _proposalId) public view returns(int) {
+    function score(bytes32 _proposalId) public view returns(uint) {
         return  _score(_proposalId);
     }
 

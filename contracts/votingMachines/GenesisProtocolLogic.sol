@@ -60,7 +60,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint daoBounty;
         uint totalStakes;// totalStakes[0] - (amount staked minus fee) - Total number of tokens staked which can be redeemable by stakers.
                            // totalStakes[1] - (amount staked) - Total number of redeemable tokens.
-        uint threshold;
+        uint confidenceThreshold;
         uint expirationCallBountyPercentage;
         uint[3] times; //times[0] - sumbmittedTime
                        //times[1] - boostedPhaseTime
@@ -303,8 +303,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
      * @return bool true or false.
      */
     function shouldBoost(bytes32 _proposalId) public view returns(bool) {
-        Proposal storage proposal = proposals[_proposalId];
-        return (proposal.stakes[YES] > proposal.stakes[NO].mul(threshold(proposal.paramsHash,proposal.organizationId)));
+        Proposal memory proposal = proposals[_proposalId];
+        return (_score(_proposalId) > threshold(proposal.paramsHash,proposal.organizationId));
     }
 
     /**
@@ -439,7 +439,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                     proposal.state = ProposalState.PreBoosted;
                     // solium-disable-next-line security/no-block-members
                     proposal.times[2] = now;
-                    proposal.threshold = threshold(proposal.paramsHash,proposal.organizationId);
+                    proposal.confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
                   }
                }
 
@@ -457,7 +457,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                         averagesBoostDownstakes[proposal.organizationId] = uint256(int256(averageBoostDownstakes) + ((int216(proposal.stakes[NO])-int216(averageBoostDownstakes)).toReal().div(int216(orgBoostedProposalsCnt[proposal.organizationId]).toReal())).fromReal());
                  }
                } else { //check the Confidence level is stable
-                    if (proposal.stakes[YES] <= proposal.threshold.mul(proposal.stakes[NO])) {
+                    if (_score(_proposalId) <= proposal.confidenceThreshold) {
                         proposal.state = ProposalState.Qued;
                     }
                }
@@ -612,11 +612,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
      * @dev _score return the proposal score (Confidence level)
      * For dual choice proposal S = (S+)/(S-)
      * @param _proposalId the ID of the proposal
-     * @return int proposal score.
+     * @return uint proposal score.
      */
-    function _score(bytes32 _proposalId) internal view returns(int) {
+    function _score(bytes32 _proposalId) internal view returns(uint) {
         Proposal storage proposal = proposals[_proposalId];
-        return (int216(proposal.stakes[YES]).toReal().div(int216(proposal.stakes[NO]).toReal())).fromReal();
+        return uint((int216(proposal.stakes[YES]).toReal().div(int216(proposal.stakes[NO]).toReal())).fromReal());
     }
 
     /**

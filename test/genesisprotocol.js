@@ -267,7 +267,7 @@ const stake = async function(_testSetup,_proposalId,_vote,_amount,_staker) {
 
 
 contract('GenesisProtocol', accounts => {
-  
+
   it("staking token address", async() => {
     var testSetup = await setup(accounts);
     assert.equal(await testSetup.genesisProtocol.stakingToken(),testSetup.stakingToken.address);
@@ -1105,18 +1105,26 @@ contract('GenesisProtocol', accounts => {
 
   it("threshold ", async () => {
 
-    var testSetup = await setup(accounts);
+    var thresholdConstA = 1700; //1.7
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConstA);
 
     await propose(testSetup);
 
     assert.equal(await threshold(testSetup),1);
 
     var proposalId = await propose(testSetup);
-
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
     await stake(testSetup,proposalId,YES,100,accounts[0]);
-    assert.equal(await threshold(testSetup),2);
 
+    assert.equal(await threshold(testSetup),Math.floor(1700/1000));
+
+    //now boost another proposal
+    proposalId = await propose(testSetup);
+    await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
+    await stake(testSetup,proposalId,YES,350,accounts[0]);
+
+    var alpha = thresholdConstA/1000;
+    assert.equal(await threshold(testSetup),Math.floor(Math.pow(alpha,2)));
   });
 
   it("redeem ", async () => {
