@@ -440,7 +440,6 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint executionBar = totalReputation * params.queuedVoteRequiredPercentage/100;
         ExecutionState executionState = ExecutionState.None;
         uint averageDownstakesOfBoosted;
-        uint confidenceThreshold;
 
         if (proposal.votes[proposal.winningVote] > executionBar) {
          // someone crossed the absolute vote execution bar.
@@ -460,7 +459,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                     proposal.winningVote = NO;
                     executionState = ExecutionState.QueueTimeOut;
                  } else {
-                    confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
+                    uint confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
                     if (_score(_proposalId) > confidenceThreshold) {
                         //change proposal mode to PreBoosted mode.
                         proposal.state = ProposalState.PreBoosted;
