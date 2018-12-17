@@ -178,11 +178,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
     }
 
     /**
-      * @dev expired try to execute a boosted proposal if it is expired
+      * @dev executeExpiredBoosted try to execute a boosted proposal if it is expired
       * @param _proposalId the id of the proposal
       * @return uint expirationCallBounty the bounty amount for the expiration call
      */
-    function expired(bytes32 _proposalId) external returns(uint expirationCallBounty) {
+    function executeExpiredBoosted(bytes32 _proposalId) external returns(uint expirationCallBounty) {
         Proposal storage proposal = proposals[_proposalId];
         require(proposal.state == ProposalState.Boosted);
         require(_execute(_proposalId));
