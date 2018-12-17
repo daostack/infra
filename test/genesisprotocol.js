@@ -19,7 +19,7 @@ const setupGenesisProtocolParams = async function(
                                             _queuedVotePeriodLimit=60,
                                             _boostedVotePeriodLimit=60,
                                             _preBoostedVotePeriodLimit =0,
-                                            _thresholdConstA=2000,
+                                            _thresholdConst=2000,
                                             _quietEndingPeriod=0,
                                             _proposingRepReward=60,
                                             _votersReputationLossRatio=10,
@@ -32,7 +32,7 @@ const setupGenesisProtocolParams = async function(
                                                           _queuedVotePeriodLimit,
                                                           _boostedVotePeriodLimit,
                                                           _preBoostedVotePeriodLimit,
-                                                          _thresholdConstA,
+                                                          _thresholdConst,
                                                           _quietEndingPeriod,
                                                           _proposingRepReward,
                                                           _votersReputationLossRatio,
@@ -44,7 +44,7 @@ const setupGenesisProtocolParams = async function(
                                                           _queuedVotePeriodLimit,
                                                           _boostedVotePeriodLimit,
                                                           _preBoostedVotePeriodLimit,
-                                                          _thresholdConstA,
+                                                          _thresholdConst,
                                                           _quietEndingPeriod,
                                                           _proposingRepReward,
                                                           _votersReputationLossRatio,
@@ -62,7 +62,7 @@ const setup = async function (accounts,
                               _queuedVotePeriodLimit=60,
                               _boostedVotePeriodLimit=60,
                               _preBoostedVotePeriodLimit =0,
-                              _thresholdConstA=2000,
+                              _thresholdConst=2000,
                               _quietEndingPeriod=0,
                               _proposingRepReward=60,
                               _votersReputationLossRatio=10,
@@ -89,7 +89,7 @@ const setup = async function (accounts,
                                                                      _queuedVotePeriodLimit,
                                                                      _boostedVotePeriodLimit,
                                                                      _preBoostedVotePeriodLimit,
-                                                                     _thresholdConstA,
+                                                                     _thresholdConst,
                                                                      _quietEndingPeriod,
                                                                      _proposingRepReward,
                                                                      _votersReputationLossRatio,
@@ -367,7 +367,7 @@ contract('GenesisProtocol', accounts => {
   it("check organization params validity", async function() {
     var queuedVoteRequiredPercentage = 0;
     var votersReputationLossRatio = 1;
-    var thresholdConstA = 2000;
+    var thresholdConst = 2000;
 
     try {
       await setup(accounts,
@@ -376,7 +376,7 @@ contract('GenesisProtocol', accounts => {
                   60,//_queuedVotePeriodLimit
                   60,//_boostedVotePeriodLimit
                   0,//_preBoostedVotePeriodLimit
-                  thresholdConstA,//_thresholdConstA
+                  thresholdConst,//_thresholdConst
                   20,//_quietEndingPeriod
                   60,//_proposingRepReward
                   0,//_votersReputationLossRatio
@@ -397,7 +397,7 @@ contract('GenesisProtocol', accounts => {
         60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
-        thresholdConstA,//_thresholdConstA
+        thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
         60,//_proposingRepReward
         0,//_votersReputationLossRatio
@@ -418,7 +418,7 @@ contract('GenesisProtocol', accounts => {
         60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
-        thresholdConstA,//_thresholdConstA
+        thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
         60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
@@ -431,7 +431,7 @@ contract('GenesisProtocol', accounts => {
     }
 
     votersReputationLossRatio = 100;
-    thresholdConstA = 0;
+    thresholdConst = 0;
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
@@ -439,18 +439,18 @@ contract('GenesisProtocol', accounts => {
         60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
-        thresholdConstA,//_thresholdConstA
+        thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
         60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         1//_daoBountyConst
         );
-      assert(false, " thresholdConstA > 0 ");
+      assert(false, " thresholdConst > 0 ");
     } catch(error) {
       helpers.assertVMException(error);
     }
-    thresholdConstA = 2000;
+    thresholdConst = 2000;
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
@@ -458,7 +458,7 @@ contract('GenesisProtocol', accounts => {
         60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
-        thresholdConstA,//_thresholdConstA
+        thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
         60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
@@ -476,7 +476,7 @@ contract('GenesisProtocol', accounts => {
         60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
-        thresholdConstA,//_thresholdConstA
+        thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
         60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
@@ -1043,7 +1043,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.averagesBoostDownstakes(organizationId),15);
+    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
 
     //BOOST another proposal
     proposalId = await propose(testSetup);
@@ -1054,11 +1054,11 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,web3.utils.toWei("3000"),accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.averagesBoostDownstakes(organizationId),Math.floor((15+150)/2));
+    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),Math.floor((15+150)/2));
     //expiere proposal by getting absolute majority
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS,{from:accounts[2]});
     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-    assert.equal(await testSetup.genesisProtocol.averagesBoostDownstakes(organizationId),Math.floor((82*2-150)/1));
+    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),Math.floor((82*2-150)/1));
 
   });
 
@@ -1081,11 +1081,11 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.averagesBoostDownstakes(organizationId),15);
+    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
 
     //expiere proposal by getting absolute majority
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS,{from:accounts[2]});
-    assert.equal(await testSetup.genesisProtocol.averagesBoostDownstakes(organizationId),0);
+    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),0);
   });
 
 
@@ -1110,8 +1110,8 @@ contract('GenesisProtocol', accounts => {
 
   it("threshold ", async () => {
 
-    var thresholdConstA = 1700; //1.7
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConstA);
+    var thresholdConst = 1700; //1.7
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConst);
 
     await propose(testSetup);
 
@@ -1128,7 +1128,7 @@ contract('GenesisProtocol', accounts => {
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
     await stake(testSetup,proposalId,YES,350,accounts[0]);
 
-    var alpha = thresholdConstA/1000;
+    var alpha = thresholdConst/1000;
     assert.equal(await threshold(testSetup),Math.floor(Math.pow(alpha,2)));
   });
 
@@ -1185,7 +1185,7 @@ contract('GenesisProtocol', accounts => {
     it("dynamic threshold ", async () => {
       var testSetup = await setup(accounts);
 
-      var thresholdConstA = 2000/1000;
+      var thresholdConst = 2000/1000;
 
 
       var proposalId = await propose(testSetup);
@@ -1199,7 +1199,7 @@ contract('GenesisProtocol', accounts => {
       await stake(testSetup,proposalId,YES,100,accounts[0]);
       assert.equal(await testSetup.genesisProtocol.state(proposalId),boostedState);
       assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-      assert.equal(await threshold(testSetup),thresholdConstA);
+      assert.equal(await threshold(testSetup),thresholdConst);
 
       //set up another proposal
       proposalId = await propose(testSetup);
@@ -1209,13 +1209,13 @@ contract('GenesisProtocol', accounts => {
       assert.equal(await testSetup.genesisProtocol.state(proposalId),boostedState);
 
       assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),2);
-      assert.equal(await threshold(testSetup),thresholdConstA*thresholdConstA);
+      assert.equal(await threshold(testSetup),thresholdConst*thresholdConst);
 
       //execute
       await helpers.increaseTime(61);
       await testSetup.genesisProtocol.execute(proposalId);
       assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-      assert.equal(await threshold(testSetup),thresholdConstA);
+      assert.equal(await threshold(testSetup),thresholdConst);
     });
 
     it("reputation flow ", async () => {

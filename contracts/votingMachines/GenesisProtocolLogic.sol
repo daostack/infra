@@ -28,8 +28,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint queuedVotePeriodLimit; //the time limit for a proposal to be in an absolute voting mode.
         uint boostedVotePeriodLimit; //the time limit for a proposal to be in boost mode.
         uint preBoostedVotePeriodLimit; //the time limit for a proposal to be in an preparation state (stable) before boosted.
-        int thresholdConstA; //constant A for threshold calculation . threshold =A ** (numberOfBoostedProposals)
-        uint limitExponentValue;
+        int thresholdConst; //constant  for threshold calculation . threshold =thresholdConst ** (numberOfBoostedProposals)
+        uint limitExponentValue;//// an upper limit for numberOfBoostedProposals in the threshold calculation to prevent overflow
         uint quietEndingPeriod; //quite ending period
         uint proposingRepReward;//proposer reputation reward.
         uint votersReputationLossRatio;//Unsuccessful pre booster voters lose votersReputationLossRatio% of their reputation.
@@ -47,7 +47,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     struct Staker {
         uint vote; // YES(1) ,NO(2)
         uint amount; // amount of staker's stake
-        uint amount4Bounty;
+        uint amount4Bounty;// amount of staker's stake used for bounty reward calculation.
     }
 
     struct Proposal {
@@ -56,14 +56,14 @@ contract GenesisProtocolLogic is IntVoteInterface {
         ProposalState state;
         uint winningVote; //the winning vote.
         address proposer;
-        uint currentBoostedVotePeriodLimit;
+        uint currentBoostedVotePeriodLimit;//the proposal boosted period limit . it is updated for the case of quiteWindow mode.
         bytes32 paramsHash;
-        uint daoBountyRemain; //use for checking sum zero bounty claims.
+        uint daoBountyRemain; //use for checking sum zero bounty claims.it is set at the proposing time.
         uint daoBounty;
         uint totalStakes;// totalStakes[0] - (amount staked minus fee) - Total number of tokens staked which can be redeemable by stakers.
                            // totalStakes[1] - (amount staked) - Total number of redeemable tokens.
         uint confidenceThreshold;
-        uint expirationCallBountyPercentage;
+        uint expirationCallBountyPercentage;//The percentage from upper stakes which the caller for the expiration was given.
         uint[3] times; //times[0] - submittedTime
                        //times[1] - boostedPhaseTime
                        //times[2] -preBoostedPhaseTime;
@@ -92,7 +92,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
            //organizationId => organization
     mapping(bytes32        => address     ) public organizations;
     //organizationId => averageBoostDownstakes
-    mapping(bytes32           => uint               ) public averagesBoostDownstakes;
+    mapping(bytes32           => uint               ) public averagesDownstakesOfBoosted;
     uint constant public NUM_OF_CHOICES = 2;
     uint constant public NO = 2;
     uint constant public YES = 1;
@@ -140,7 +140,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
       // solium-disable-next-line security/no-block-members
         require(now > parameters[_paramsHash].activationTime,"not active yet");
         //Check parameters existence.
-        require(parameters[_paramsHash].queuedVoteRequiredPercentage > 0);
+        require(parameters[_paramsHash].queuedVoteRequiredPercentage >= 50);
         // Generate a unique ID:
         bytes32 proposalId = keccak256(abi.encodePacked(this, proposalsCnt));
         proposalsCnt++;
@@ -164,7 +164,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             }
         }
         //calc dao bounty
-        uint daoBounty = parameters[_paramsHash].daoBountyConst.mul(averagesBoostDownstakes[proposal.organizationId]);
+        uint daoBounty = parameters[_paramsHash].daoBountyConst.mul(averagesDownstakesOfBoosted[proposal.organizationId]);
         if (daoBounty < parameters[_paramsHash].minimumDaoBounty) {
             proposal.daoBountyRemain = parameters[_paramsHash].minimumDaoBounty;
         } else {
@@ -329,7 +329,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             power = int216(params.limitExponentValue).toReal();
         }
 
-        return uint(params.thresholdConstA.pow(power).fromReal());
+        return uint(params.thresholdConst.pow(power).fromReal());
     }
 
     /**
@@ -339,7 +339,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
      *    _params[1] - _queuedVotePeriodLimit, //the time limit for a proposal to be in an absolute voting mode.
      *    _params[2] - _boostedVotePeriodLimit, //the time limit for a proposal to be in an relative voting mode.
      *    _params[3] - _preBoostedVotePeriodLimit, //the time limit for a proposal to be in an preparation state (stable) before boosted.
-     *    _params[4] -_thresholdConstA
+     *    _params[4] -_thresholdConst
      *    _params[5] -_quietEndingPeriod
      *    _params[6] -_proposingRepReward
      *    _params[7] -_votersReputationLossRatio
@@ -356,7 +356,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     returns(bytes32)
     {
         require(_params[0] <= 100 && _params[0] >= 50,"50 <= queuedVoteRequiredPercentage <= 100");
-        require(_params[4] <= 16000 && _params[4] > 1000,"1000 < thresholdConstA <= 16000");
+        require(_params[4] <= 16000 && _params[4] > 1000,"1000 < thresholdConst <= 16000");
         require(_params[7] <= 100,"votersReputationLossRatio <= 100");
         require(_params[2] >= _params[5],"boostedVotePeriodLimit >= quietEndingPeriod");
         require(_params[8] > 0,"minimumDaoBounty should be > 0");
@@ -381,7 +381,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             queuedVotePeriodLimit: _params[1],
             boostedVotePeriodLimit: _params[2],
             preBoostedVotePeriodLimit: _params[3],
-            thresholdConstA:alpha,
+            thresholdConst:alpha,
             limitExponentValue:limitExponent,
             quietEndingPeriod: _params[5],
             proposingRepReward: _params[6],
@@ -439,7 +439,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint totalReputation = VotingMachineCallbacksInterface(proposal.callbacks).getTotalReputationSupply(_proposalId);
         uint executionBar = totalReputation * params.queuedVoteRequiredPercentage/100;
         ExecutionState executionState = ExecutionState.None;
-        uint averageBoostDownstakes;
+        uint averageDownstakesOfBoosted;
+        uint confidenceThreshold;
 
         if (proposal.votes[proposal.winningVote] > executionBar) {
          // someone crossed the absolute vote execution bar.
@@ -458,13 +459,16 @@ contract GenesisProtocolLogic is IntVoteInterface {
                     proposal.state = ProposalState.ExpiredInQueue;
                     proposal.winningVote = NO;
                     executionState = ExecutionState.QueueTimeOut;
-                 } else if ( shouldBoost(_proposalId)) {
-                    //change proposal mode to PreBoosted mode.
-                    proposal.state = ProposalState.PreBoosted;
-                    // solium-disable-next-line security/no-block-members
-                    proposal.times[2] = now;
-                    proposal.confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
-                  }
+                 } else {
+                    confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
+                    if (_score(_proposalId) > confidenceThreshold) {
+                        //change proposal mode to PreBoosted mode.
+                        proposal.state = ProposalState.PreBoosted;
+                        // solium-disable-next-line security/no-block-members
+                        proposal.times[2] = now;
+                        proposal.confidenceThreshold = confidenceThreshold;
+                   }
+                }
                }
 
             if (proposal.state == ProposalState.PreBoosted) {
@@ -477,8 +481,12 @@ contract GenesisProtocolLogic is IntVoteInterface {
                         proposal.times[1] = now;
                         orgBoostedProposalsCnt[proposal.organizationId]++;
                        //add a value to average -> average = average + ((value - average) / nbValues)
-                        averageBoostDownstakes = averagesBoostDownstakes[proposal.organizationId];
-                        averagesBoostDownstakes[proposal.organizationId] = uint256(int256(averageBoostDownstakes) + ((int216(proposal.stakes[NO])-int216(averageBoostDownstakes)).toReal().div(int216(orgBoostedProposalsCnt[proposal.organizationId]).toReal())).fromReal());
+                        averageDownstakesOfBoosted = averagesDownstakesOfBoosted[proposal.organizationId];
+                        // solium-disable-next-line indentation
+                        averagesDownstakesOfBoosted[proposal.organizationId] = uint256(int256(averageDownstakesOfBoosted) +
+                            ((int216(proposal.stakes[NO])-int216(averageDownstakesOfBoosted))
+                            .toReal().div(int216(orgBoostedProposalsCnt[proposal.organizationId]).toReal()))
+                            .fromReal());
                  }
                } else { //check the Confidence level is stable
                     if (_score(_proposalId) <= proposal.confidenceThreshold) {
@@ -503,10 +511,10 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 //remove a value from average = ((average * nbValues) - value) / (nbValues - 1);
                 uint boostedProposals = orgBoostedProposalsCnt[tmpProposal.organizationId];
                 if (boostedProposals == 0) {
-                    averagesBoostDownstakes[proposal.organizationId] = 0;
+                    averagesDownstakesOfBoosted[proposal.organizationId] = 0;
                 } else {
-                    averageBoostDownstakes = averagesBoostDownstakes[proposal.organizationId];
-                    averagesBoostDownstakes[proposal.organizationId] = uint256(int216(averageBoostDownstakes.mul(boostedProposals+1).sub(proposal.stakes[NO])).toReal().div(int216(boostedProposals).toReal()).fromReal());
+                    averageDownstakesOfBoosted = averagesDownstakesOfBoosted[proposal.organizationId];
+                    averagesDownstakesOfBoosted[proposal.organizationId] = uint256(int216(averageDownstakesOfBoosted.mul(boostedProposals+1).sub(proposal.stakes[NO])).toReal().div(int216(boostedProposals).toReal()).fromReal());
                 }
             }
             emit ExecuteProposal(_proposalId, organizations[proposal.organizationId], proposal.winningVote, totalReputation);
