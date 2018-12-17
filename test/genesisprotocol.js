@@ -15,38 +15,38 @@ export class GenesisProtocolParams {
 const setupGenesisProtocolParams = async function(
                                             testSetup,
                                             voteOnBehalf = helpers.NULL_ADDRESS,
-                                            _quedVoteRequiredPercentage=50,
-                                            _quedVotePeriodLimit=60,
+                                            _queuedVoteRequiredPercentage=50,
+                                            _queuedVotePeriodLimit=60,
                                             _boostedVotePeriodLimit=60,
                                             _preBoostedVotePeriodLimit =0,
                                             _thresholdConstA=2000,
                                             _quietEndingPeriod=0,
-                                            _proposingRepRewardConstA=60,
+                                            _proposingRepReward=60,
                                             _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
                                             _daoBountyConst=10,
                                             _activationTime=0,
                                             ) {
   var genesisProtocolParams = new GenesisProtocolParams();
-  await testSetup.genesisProtocolCallbacks.setParameters([_quedVoteRequiredPercentage,
-                                                          _quedVotePeriodLimit,
+  await testSetup.genesisProtocolCallbacks.setParameters([_queuedVoteRequiredPercentage,
+                                                          _queuedVotePeriodLimit,
                                                           _boostedVotePeriodLimit,
                                                           _preBoostedVotePeriodLimit,
                                                           _thresholdConstA,
                                                           _quietEndingPeriod,
-                                                          _proposingRepRewardConstA,
+                                                          _proposingRepReward,
                                                           _votersReputationLossRatio,
                                                           _minimumDaoBounty,
                                                           _daoBountyConst,
                                                           _activationTime],
                                                  voteOnBehalf);
-  genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_quedVoteRequiredPercentage,
-                                                          _quedVotePeriodLimit,
+  genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_queuedVoteRequiredPercentage,
+                                                          _queuedVotePeriodLimit,
                                                           _boostedVotePeriodLimit,
                                                           _preBoostedVotePeriodLimit,
                                                           _thresholdConstA,
                                                           _quietEndingPeriod,
-                                                          _proposingRepRewardConstA,
+                                                          _proposingRepReward,
                                                           _votersReputationLossRatio,
                                                           _minimumDaoBounty,
                                                           _daoBountyConst,
@@ -58,13 +58,13 @@ const setupGenesisProtocolParams = async function(
 var YES,NO;
 const setup = async function (accounts,
                               _voteOnBehalf = helpers.NULL_ADDRESS,
-                              _quedVoteRequiredPercentage=50,
-                              _quedVotePeriodLimit=60,
+                              _queuedVoteRequiredPercentage=50,
+                              _queuedVotePeriodLimit=60,
                               _boostedVotePeriodLimit=60,
                               _preBoostedVotePeriodLimit =0,
                               _thresholdConstA=2000,
                               _quietEndingPeriod=0,
-                              _proposingRepRewardConstA=60,
+                              _proposingRepReward=60,
                               _votersReputationLossRatio=10,
                               _minimumDaoBounty=15,
                               _daoBountyConst=10,
@@ -85,13 +85,13 @@ const setup = async function (accounts,
    await testSetup.org.reputation.transferOwnership(testSetup.genesisProtocolCallbacks.address);
    testSetup.genesisProtocolParams= await setupGenesisProtocolParams(testSetup,
                                                                      _voteOnBehalf,
-                                                                     _quedVoteRequiredPercentage,
-                                                                     _quedVotePeriodLimit,
+                                                                     _queuedVoteRequiredPercentage,
+                                                                     _queuedVotePeriodLimit,
                                                                      _boostedVotePeriodLimit,
                                                                      _preBoostedVotePeriodLimit,
                                                                      _thresholdConstA,
                                                                      _quietEndingPeriod,
-                                                                     _proposingRepRewardConstA,
+                                                                     _proposingRepReward,
                                                                      _votersReputationLossRatio,
                                                                      _minimumDaoBounty,
                                                                      _daoBountyConst,
@@ -143,7 +143,7 @@ const checkProposalInfo = async function(proposalId, _proposalInfo,_times,genesi
 };
 
 const checkProposalTimes = async function(proposalId,_times,genesisProtocol) {
-  //times[0] - sumbmittedTime
+  //times[0] - submittedTime
   //times[1] - boostedPhaseTime
   //times[2] -preBoostedPhaseTime;
   let times =  await genesisProtocol.getProposalTimes(proposalId);
@@ -365,62 +365,62 @@ contract('GenesisProtocol', accounts => {
   });
 
   it("check organization params validity", async function() {
-    var quedVoteRequiredPercentage = 0;
+    var queuedVoteRequiredPercentage = 0;
     var votersReputationLossRatio = 1;
     var thresholdConstA = 2000;
 
     try {
       await setup(accounts,
                   helpers.NULL_ADDRESS,
-                  quedVoteRequiredPercentage,
-                  60,//_quedVotePeriodLimit
+                  queuedVoteRequiredPercentage,
+                  60,//_queuedVotePeriodLimit
                   60,//_boostedVotePeriodLimit
                   0,//_preBoostedVotePeriodLimit
                   thresholdConstA,//_thresholdConstA
                   20,//_quietEndingPeriod
-                  60,//_proposingRepRewardConstA
+                  60,//_proposingRepReward
                   0,//_votersReputationLossRatio
                   1,//_minimumDaoBounty
                   1//_daoBountyConst
                 );
-      assert(false, " 50 <= quedVoteRequiredPercentage <=100    ");
+      assert(false, " 50 <= queuedVoteRequiredPercentage <=100    ");
     } catch(error) {
       helpers.assertVMException(error);
     }
 
-     quedVoteRequiredPercentage = 101;
+     queuedVoteRequiredPercentage = 101;
 
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
-        quedVoteRequiredPercentage,
-        60,//_quedVotePeriodLimit
+        queuedVoteRequiredPercentage,
+        60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
         thresholdConstA,//_thresholdConstA
         20,//_quietEndingPeriod
-        60,//_proposingRepRewardConstA
+        60,//_proposingRepReward
         0,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         1//_daoBountyConst
         );
-      assert(false, " 50 <= quedVoteRequiredPercentage <=100    ");
+      assert(false, " 50 <= queuedVoteRequiredPercentage <=100    ");
     } catch(error) {
       helpers.assertVMException(error);
     }
 
-    quedVoteRequiredPercentage = 100;
+    queuedVoteRequiredPercentage = 100;
     votersReputationLossRatio = 101;
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
-        quedVoteRequiredPercentage,
-        60,//_quedVotePeriodLimit
+        queuedVoteRequiredPercentage,
+        60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
         thresholdConstA,//_thresholdConstA
         20,//_quietEndingPeriod
-        60,//_proposingRepRewardConstA
+        60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         1//_daoBountyConst
@@ -435,13 +435,13 @@ contract('GenesisProtocol', accounts => {
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
-        quedVoteRequiredPercentage,
-        60,//_quedVotePeriodLimit
+        queuedVoteRequiredPercentage,
+        60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
         thresholdConstA,//_thresholdConstA
         20,//_quietEndingPeriod
-        60,//_proposingRepRewardConstA
+        60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         1//_daoBountyConst
@@ -454,13 +454,13 @@ contract('GenesisProtocol', accounts => {
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
-        quedVoteRequiredPercentage,
-        60,//_quedVotePeriodLimit
+        queuedVoteRequiredPercentage,
+        60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
         thresholdConstA,//_thresholdConstA
         20,//_quietEndingPeriod
-        60,//_proposingRepRewardConstA
+        60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         0//_daoBountyConst
@@ -472,13 +472,13 @@ contract('GenesisProtocol', accounts => {
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,
-        quedVoteRequiredPercentage,
-        60,//_quedVotePeriodLimit
+        queuedVoteRequiredPercentage,
+        60,//_queuedVotePeriodLimit
         60,//_boostedVotePeriodLimit
         0,//_preBoostedVotePeriodLimit
         thresholdConstA,//_thresholdConstA
         20,//_quietEndingPeriod
-        60,//_proposingRepRewardConstA
+        60,//_proposingRepReward
         votersReputationLossRatio,//_votersReputationLossRatio
         0,//_minimumDaoBounty
         1//_daoBountyConst

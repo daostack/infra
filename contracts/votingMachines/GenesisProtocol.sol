@@ -119,7 +119,9 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
     }
 
     /**
-     * @dev Cancel a proposal, only the owner can call this function and only if allowOwner flag is true.
+     * @dev Cancel a proposal
+     * cancel proposal on genesis protocol is not allowed.
+     * It is here to satisfied IntVoteInterface
      */
     function cancelProposal(bytes32 ) external returns(bool) {
         //This is not allowed.
@@ -168,7 +170,7 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
     }
 
     /**
-      * @dev getNumberOfChoices returns the number of choices possible in this proposal
+      * @dev getProposalTimes returns proposals times variables.
       * @param _proposalId id of the proposal
       * @return proposals times array
       */
