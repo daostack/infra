@@ -1537,6 +1537,41 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalInfo[proposalStateIndex],3);   //state back to q
 
   });
+  it("prepare for boost check high from the minimum threshold", async () => {
+
+    var preBoostedVotePeriodLimit = 60;
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,600,60,preBoostedVotePeriodLimit,3000);
+    var proposalId = await propose(testSetup);
+    var proposalId2 = await propose(testSetup);//boost a proposal
+    await testSetup.genesisProtocol.vote(proposalId2,YES,helpers.NULL_ADDRESS);
+    await stake(testSetup,proposalId2,YES,web3.utils.toWei("1500"),accounts[0]);
+    await helpers.increaseTime(preBoostedVotePeriodLimit+1);
+    await testSetup.genesisProtocol.execute(proposalId2);
+    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+    assert.equal(await threshold(testSetup),3);
+
+    await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
+    await stake(testSetup,proposalId,YES,100,accounts[0]);
+
+    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+    assert.equal(proposalInfo[10],3);//check proposal own threshold
+
+    assert.equal(await testSetup.genesisProtocol.score(proposalId),6);
+    assert.equal(await threshold(testSetup),3);
+    //now decrease threshold
+    await testSetup.genesisProtocol.vote(proposalId2,YES,helpers.NULL_ADDRESS,{from:accounts[2]});
+    assert.equal(await threshold(testSetup),1);
+    await stake(testSetup,proposalId,NO,35,accounts[1]); //downstake 35 to make score =2.
+    assert.equal(await testSetup.genesisProtocol.score(proposalId),2);
+    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //no change is state
+
+
+  });
 
 
   it("prepare for boost and boost with a new threshold  ", async () => {

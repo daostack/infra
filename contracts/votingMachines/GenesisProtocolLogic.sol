@@ -5,6 +5,7 @@ import { RealMath } from "../libs/RealMath.sol";
 import "./VotingMachineCallbacksInterface.sol";
 import "./ProposalExecuteInterface.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/AddressUtils.sol";
 
@@ -15,6 +16,7 @@ import "openzeppelin-solidity/contracts/AddressUtils.sol";
  */
 contract GenesisProtocolLogic is IntVoteInterface {
     using SafeMath for uint;
+    using Math for uint;
     using RealMath for int216;
     using RealMath for int256;
     using AddressUtils for address;
@@ -440,6 +442,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint executionBar = totalReputation * params.queuedVoteRequiredPercentage/100;
         ExecutionState executionState = ExecutionState.None;
         uint averageDownstakesOfBoosted;
+        uint confidenceThreshold;
 
         if (proposal.votes[proposal.winningVote] > executionBar) {
          // someone crossed the absolute vote execution bar.
@@ -459,7 +462,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                     proposal.winningVote = NO;
                     executionState = ExecutionState.QueueTimeOut;
                  } else {
-                    uint confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
+                    confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
                     if (_score(_proposalId) > confidenceThreshold) {
                         //change proposal mode to PreBoosted mode.
                         proposal.state = ProposalState.PreBoosted;
@@ -471,10 +474,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
                }
 
             if (proposal.state == ProposalState.PreBoosted) {
+                confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
               // solium-disable-next-line security/no-block-members
                 if ((now - proposal.times[2]) >= params.preBoostedVotePeriodLimit) {
-                    if (shouldBoost(_proposalId)) {
-                     //change proposal mode to Boosted mode.
+                    if (_score(_proposalId) > confidenceThreshold) {
+                       //change proposal mode to Boosted mode.
                         proposal.state = ProposalState.Boosted;
                        // solium-disable-next-line security/no-block-members
                         proposal.times[1] = now;
@@ -488,8 +492,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
                             .fromReal());
                  }
                } else { //check the Confidence level is stable
-                    if (_score(_proposalId) <= proposal.confidenceThreshold) {
+                    uint proposalScore = _score(_proposalId);
+                    if (proposalScore <= proposal.confidenceThreshold.min256(confidenceThreshold)) {
                         proposal.state = ProposalState.Queued;
+                    } else if (proposal.confidenceThreshold > proposalScore) {
+                        proposal.confidenceThreshold = confidenceThreshold;
                     }
                }
             }
