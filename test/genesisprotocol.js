@@ -1486,6 +1486,35 @@ contract('GenesisProtocol', accounts => {
       assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[1],accounts[1]));
   });
 
+  it("organization can redeem its winning stakes ", async () => {
+      var testSetup = await setup(accounts);
+
+      var proposalId = await propose(testSetup);
+
+
+      await testSetup.genesisProtocol.vote(proposalId,NO,helpers.NULL_ADDRESS);
+      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+
+      await stake(testSetup,proposalId,YES,100,accounts[1]);
+      await helpers.increaseTime(61);
+
+      await testSetup.genesisProtocol.execute(proposalId);
+      var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+      assert.equal(proposalInfo[8],15);
+
+      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,testSetup.genesisProtocolCallbacks.address);
+      var redeemToken = redeemRewards[0].toNumber();
+      //assert.equal(redeemToken,100);
+      var tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
+      proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+      assert.equal(proposalInfo[9],15);
+      assert.equal(tx.logs.length,1);
+      assert.equal(tx.logs[0].event, "Redeem");
+      assert.equal(tx.logs[0].args._proposalId, proposalId);
+      assert.equal(tx.logs[0].args._beneficiary, testSetup.genesisProtocolCallbacks.address);
+      assert.equal(tx.logs[0].args._amount, redeemToken);
+  });
+
 
   it("prepare for boost  ", async () => {
 

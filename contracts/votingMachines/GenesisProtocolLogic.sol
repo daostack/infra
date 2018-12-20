@@ -38,7 +38,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint minimumDaoBounty;
         uint daoBountyConst;
         uint activationTime;//the point in time after which proposals can be created.
-        address voteOnBehalf; //this address is allowed to vote of behalf of someone else.
+        address voteOnBehalf; //if this address is set so only this address is allowed to vote of behalf of someone else.
     }
     struct Voter {
         uint vote; // YES(1) ,NO(2)
@@ -175,6 +175,10 @@ contract GenesisProtocolLogic is IntVoteInterface {
         proposal.totalStakes = proposal.daoBountyRemain;
         proposals[proposalId] = proposal;
         proposals[proposalId].stakes[NO] = proposal.daoBountyRemain;//dao downstake on the proposal
+        Staker storage staker = proposals[proposalId].stakers[organizations[proposal.organizationId]];
+        staker.vote = NO;
+        staker.amount = proposal.daoBountyRemain;
+
         emit NewProposal(proposalId, organizations[proposal.organizationId], NUM_OF_CHOICES, _proposer, _paramsHash);
         return proposalId;
     }
@@ -236,6 +240,10 @@ contract GenesisProtocolLogic is IntVoteInterface {
                         rewards[0] = (staker.amount*_totalStakes)/totalWinningStakes;
                     } else {
                         rewards[0] = (staker.amount*totalStakes)/totalWinningStakes;
+                        if (organizations[proposal.organizationId] == _beneficiary) {
+                          //dao redeem it reward
+                            rewards[0] = rewards[0].sub(proposal.daoBounty);
+                        }
                     }
 
           }
@@ -562,7 +570,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         }
 
         uint amount = _amount;
-        require(stakingToken.transferFrom(_staker, address(this), amount));
+        require(stakingToken.transferFrom(_staker, address(this), amount),"fail transfer from staker");
         proposal.totalStakes = proposal.totalStakes.add(amount); //update totalRedeemableStakes
         staker.amount += amount;
         if (_vote == YES) {
@@ -571,9 +579,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         staker.vote = _vote;
 
         proposal.stakes[_vote] = amount.add(proposal.stakes[_vote]);
-      // Event:
         emit Stake(_proposalId, organizations[proposal.organizationId], _staker, _vote, _amount);
-      // execute the proposal if this vote was decisive:
         return _execute(_proposalId);
     }
 
@@ -654,6 +660,9 @@ contract GenesisProtocolLogic is IntVoteInterface {
      */
     function _score(bytes32 _proposalId) internal view returns(uint) {
         Proposal storage proposal = proposals[_proposalId];
+        if (proposal.stakes[NO] == 0) {
+            return 0;
+        }
         return uint((int216(proposal.stakes[YES]).toReal().div(int216(proposal.stakes[NO]).toReal())).fromReal());
     }
 
