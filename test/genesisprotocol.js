@@ -1648,7 +1648,7 @@ contract('GenesisProtocol', accounts => {
 
   });
 
-  it("executeExpiredBoosted", async () => {
+  it("executeBoosted", async () => {
 
     var testSetup = await setup(accounts);
 
@@ -1656,14 +1656,14 @@ contract('GenesisProtocol', accounts => {
     await testSetup.genesisProtocol.vote(proposalId,YES,helpers.NULL_ADDRESS);
     await stake(testSetup,proposalId,YES,100,accounts[0]);
     try {
-         await testSetup.genesisProtocol.executeExpiredBoosted(proposalId);
-         assert(false, 'cannot call executeExpiredBoosted if not expired');
+         await testSetup.genesisProtocol.executeBoosted(proposalId);
+         assert(false, 'cannot call executeBoosted if not expired');
        } catch (ex) {
          helpers.assertVMException(ex);
        }
     var addTime =15 ;
     await helpers.increaseTime(60+addTime);
-    var tx = await testSetup.genesisProtocol.executeExpiredBoosted(proposalId);
+    var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
 
     assert.equal(tx.logs[2].event, "ExpirationCallBounty");
     assert.equal(tx.logs[2].args._proposalId, proposalId);
@@ -1685,7 +1685,7 @@ contract('GenesisProtocol', accounts => {
   });
 
 
-  it("executeExpiredBoosted max (100)", async () => {
+  it("executeBoosted max (100)", async () => {
 
     var testSetup = await setup(accounts);
     var proposalId = await propose(testSetup);
@@ -1693,7 +1693,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
     var addTime =15*100 ;
     await helpers.increaseTime(60+addTime);
-    var tx = await testSetup.genesisProtocol.executeExpiredBoosted(proposalId);
+    var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
     assert.equal(tx.logs[2].event, "ExpirationCallBounty");
     assert.equal(tx.logs[2].args._proposalId, proposalId);
     assert.equal(tx.logs[2].args._beneficiary, accounts[0]);

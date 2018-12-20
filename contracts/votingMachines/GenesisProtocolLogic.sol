@@ -184,14 +184,14 @@ contract GenesisProtocolLogic is IntVoteInterface {
     }
 
     /**
-      * @dev executeExpiredBoosted try to execute a boosted proposal if it is expired
+      * @dev executeBoosted try to execute a boosted proposal if it is expired
       * @param _proposalId the id of the proposal
       * @return uint expirationCallBounty the bounty amount for the expiration call
      */
-    function executeExpiredBoosted(bytes32 _proposalId) external returns(uint expirationCallBounty) {
+    function executeBoosted(bytes32 _proposalId) external returns(uint expirationCallBounty) {
         Proposal storage proposal = proposals[_proposalId];
         require(proposal.state == ProposalState.Boosted);
-        require(_execute(_proposalId));
+        require(_execute(_proposalId),"proposal need to expire");
         // solium-disable-next-line security/no-block-members
         uint expirationCallBountyPercentage = (1 + now.sub(proposal.currentBoostedVotePeriodLimit + proposal.times[1]).div(15));
         if (expirationCallBountyPercentage > 100) {
@@ -199,7 +199,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         }
         proposal.expirationCallBountyPercentage = expirationCallBountyPercentage;
         expirationCallBounty = expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100);
-        require(stakingToken.transfer(msg.sender, expirationCallBounty));
+        require(stakingToken.transfer(msg.sender, expirationCallBounty),"transfer to msg.sender failed");
         emit ExpirationCallBounty(_proposalId,msg.sender,expirationCallBounty);
     }
 
