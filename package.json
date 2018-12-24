@@ -86,6 +86,6 @@
     "openzeppelin-solidity": "1.12.0"
   },
   "peerDependencies": {
-    "ganache-cli": "^6.2.3"
+    "ganache-cli": "^6.2.5"
   }
 }

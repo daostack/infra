@@ -18,7 +18,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
     event NewProposal(
       bytes32 indexed _proposalId,
       address indexed _organization,
-      uint _numOfChoices,
+      uint256 _numOfChoices,
       address _proposer,
       bytes32 _paramsHash
     );
@@ -38,7 +38,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
-    function mintReputation(uint _amount,address _beneficiary,bytes32)
+    function mintReputation(uint256 _amount,address _beneficiary,bytes32)
     external
     onlyOwner
     returns(bool)
@@ -46,7 +46,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         return reputation.mint(_beneficiary,_amount);
     }
 
-    function burnReputation(uint _amount,address _beneficiary,bytes32)
+    function burnReputation(uint256 _amount,address _beneficiary,bytes32)
     external
     onlyOwner
     returns(bool)
@@ -54,11 +54,11 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         return reputation.burn(_beneficiary,_amount);
     }
 
-    function reputationOf(address _owner,bytes32 _proposalId) external view returns(uint) {
+    function reputationOf(address _owner,bytes32 _proposalId) external view returns(uint256) {
         return reputation.balanceOfAt(_owner,proposalsBlockNumbers[_proposalId]);
     }
 
-    function stakingTokenTransfer(StandardToken _stakingToken,address _beneficiary,uint _amount,bytes32)
+    function stakingTokenTransfer(StandardToken _stakingToken,address _beneficiary,uint256 _amount,bytes32)
     external
     onlyOwner
     returns(bool)
@@ -69,7 +69,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
     function balanceOfStakingToken(StandardToken _stakingToken,bytes32)
     external
     view
-    returns(uint)
+    returns(uint256)
     {
         return _stakingToken.balanceOf(this);
     }
@@ -84,7 +84,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
         return true;
     }
 
-    function propose(uint _numOfChoices, bytes32 _paramsHash, address ,address _proposer,address _organization)
+    function propose(uint256 _numOfChoices, bytes32 _paramsHash, address ,address _proposer,address _organization)
     external
     returns
     (bytes32)
@@ -97,7 +97,7 @@ contract GenesisProtocolCallbacksMock is Debug,VotingMachineCallbacksInterface,P
     }
 
     //this function is used only for testing purpose on this mock contract
-    function burnReputationTest(uint _amount,address _beneficiary,bytes32)
+    function burnReputationTest(uint256 _amount,address _beneficiary,bytes32)
     external
     returns(bool)
     {

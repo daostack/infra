@@ -289,7 +289,7 @@ library RealMath {
         }
 
         // Find the high bit
-        int216 highBit = findbit(hibit(uint256(realArg)));
+        int216 highBit = findbit(hibit(uint256 (realArg)));
 
         // We'll shift so the high bit is the lowest non-fractional bit.
         shift = highBit - int216(REAL_FBITS);
