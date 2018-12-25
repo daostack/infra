@@ -1,6 +1,6 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/ECRecovery.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "./GenesisProtocolLogic.sol";
 
 
@@ -8,8 +8,7 @@ import "./GenesisProtocolLogic.sol";
  * @title GenesisProtocol implementation -an organization's voting machine scheme.
  */
 contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
-    using ECRecovery for bytes32;
-    using AddressUtils for address;
+    using ECDSA for bytes32;
 
     // Digest describing the data the user signs according EIP 712.
     // Needs to match what is passed to Metamask.
@@ -22,7 +21,7 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
     /**
      * @dev Constructor
      */
-    constructor(StandardToken _stakingToken)
+    constructor(ERC20 _stakingToken)
     public
     GenesisProtocolLogic(_stakingToken)
     {
@@ -54,13 +53,14 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
      * @return bool true - the proposal has been executed
      *              false - otherwise.
      */
+    /* solium-disable-next-line */  
     function stakeWithSignature(
         bytes32 _proposalId,
         uint256 _vote,
         uint256 _amount,
         uint256 _nonce,
         uint256 _signatureType,
-        bytes _signature
+        bytes calldata _signature
         )
         external
         returns(bool)
@@ -143,7 +143,7 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
       * @param _proposalId id of the proposal
       * @return proposals times array
       */
-    function getProposalTimes(bytes32 _proposalId) external view returns(uint[3] times) {
+    function getProposalTimes(bytes32 _proposalId) external view returns(uint[3] memory times) {
         return proposals[_proposalId].times;
     }
 

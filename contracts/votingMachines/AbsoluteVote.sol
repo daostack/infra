@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.2;
 
 import "../Reputation.sol";
 import "./IntVoteInterface.sol";
@@ -77,7 +77,7 @@ contract AbsoluteVote is IntVoteInterface {
         proposal.organizationId = keccak256(abi.encodePacked(msg.sender,_organization));
         proposal.open = true;
         proposals[proposalId] = proposal;
-        if (organizations[proposal.organizationId] == 0) {
+        if (organizations[proposal.organizationId] == address(0)) {
             if (_organization == address(0)) {
                 organizations[proposal.organizationId] = msg.sender;
             } else {

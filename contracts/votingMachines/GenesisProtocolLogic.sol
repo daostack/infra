@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.2;
 
 import "./IntVoteInterface.sol";
 import { RealMath } from "../libs/RealMath.sol";
@@ -6,8 +6,8 @@ import "./VotingMachineCallbacksInterface.sol";
 import "./ProposalExecuteInterface.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "openzeppelin-solidity/contracts/AddressUtils.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/utils/Address.sol";
 
 
 
@@ -19,7 +19,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     using Math for uint;
     using RealMath for int216;
     using RealMath for int256;
-    using AddressUtils for address;
+    using Address for address;
 
     enum ProposalState { None ,ExpiredInQueue, Executed, Queued ,PreBoosted,Boosted,QuietEndingPeriod }
     enum ExecutionState { None, QueueBarCrossed,QueueTimeOut,PreBoostedBarCrossed, BoostedTimeOut,BoostedBarCrossed }
@@ -99,21 +99,21 @@ contract GenesisProtocolLogic is IntVoteInterface {
     uint256 constant public NO = 2;
     uint256 constant public YES = 1;
     uint256 public proposalsCnt; // Total number of proposals
-    StandardToken public stakingToken;
+    ERC20 public stakingToken;
     address constant GEN_TOKEN_ADDRESS = 0x543Ff227F64Aa17eA132Bf9886cAb5DB55DCAddf;
     uint256 constant MAX_BOOSTED_PROPOSALS = 4096;
 
     /**
      * @dev Constructor
      */
-    constructor(StandardToken _stakingToken) public
+    constructor(ERC20 _stakingToken) public
     {
       //The GEN token (staking token) address is hard coded in the contract by GEN_TOKEN_ADDRESS .
       //This will work for a network which already hosted the GEN token on this address (e.g mainnet).
       //If such contract address does not exist in the network (e.g ganache) the contract will use the _stakingToken param as the
       //staking token address.
         if (address(GEN_TOKEN_ADDRESS).isContract()) {
-            stakingToken = StandardToken(GEN_TOKEN_ADDRESS);
+            stakingToken = ERC20(GEN_TOKEN_ADDRESS);
         } else {
             stakingToken = _stakingToken;
         }
@@ -159,7 +159,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         proposal.proposer = _proposer;
         proposal.winningVote = NO;
         proposal.paramsHash = _paramsHash;
-        if (organizations[proposal.organizationId] == 0) {
+        if (organizations[proposal.organizationId] == address(0)) {
             if (_organization == address(0)) {
                 organizations[proposal.organizationId] = msg.sender;
             } else {
@@ -215,7 +215,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
      *           [1] voterReputationReward
      *           [2] proposerReputationReward
      */
-    function redeem(bytes32 _proposalId,address _beneficiary) public returns (uint[3] rewards) {
+    function redeem(bytes32 _proposalId,address _beneficiary) public returns (uint[3] memory rewards) {
         Proposal storage proposal = proposals[_proposalId];
         // solium-disable-next-line max-len
         require((proposal.state == ProposalState.Executed)||(proposal.state == ProposalState.ExpiredInQueue),"Proposal should be Executed or ExpiredInQueue");
@@ -266,7 +266,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         //as proposer
         if ((proposal.proposer == _beneficiary)&&(proposal.winningVote == YES)&&(proposal.proposer != address(0))) {
             rewards[2] = params.proposingRepReward;
-            proposal.proposer = 0;
+            proposal.proposer = address(0);
         }
         if (rewards[0] != 0) {
             proposal.totalStakes = proposal.totalStakes.sub(rewards[0]);
@@ -360,7 +360,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
      * @param _voteOnBehalf - authorized to vote on behalf of others.
     */
     function setParameters(
-        uint[11] _params, //use array here due to stack too deep issue.
+        uint[11] memory _params, //use array here due to stack too deep issue.
         address _voteOnBehalf
     )
     public
@@ -409,7 +409,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
    * @dev hashParameters returns a hash of the given parameters
    */
     function getParametersHash(
-        uint[11] _params,//use array here due to stack too deep issue.
+        uint[11] memory _params,//use array here due to stack too deep issue.
         address _voteOnBehalf
     )
         public
@@ -502,7 +502,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                  }
                } else { //check the Confidence level is stable
                     uint256 proposalScore = _score(_proposalId);
-                    if (proposalScore <= proposal.confidenceThreshold.min256(confidenceThreshold)) {
+                    if (proposalScore <= proposal.confidenceThreshold.min(confidenceThreshold)) {
                         proposal.state = ProposalState.Queued;
                     } else if (proposal.confidenceThreshold > proposalScore) {
                         proposal.confidenceThreshold = confidenceThreshold;

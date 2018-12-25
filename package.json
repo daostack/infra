@@ -83,7 +83,7 @@
   "homepage": "https://daostack.io",
   "dependencies": {
     "ethereumjs-abi": "^0.6.5",
-    "openzeppelin-solidity": "1.12.0"
+    "openzeppelin-solidity": "github:OpenZeppelin/openzeppelin-solidity#release-v2.1.0-solc-0.5"
   },
   "peerDependencies": {
     "ganache-cli": "^6.2.5"

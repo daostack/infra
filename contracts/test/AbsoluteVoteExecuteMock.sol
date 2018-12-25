@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.2;
 
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
@@ -51,7 +51,7 @@ contract AbsoluteVoteExecuteMock is Debug,VotingMachineCallbacksInterface,Propos
         return reputation.balanceOfAt(_owner,proposalsBlockNumbers[_proposalId]);
     }
 
-    function stakingTokenTransfer(StandardToken _stakingToken,address _beneficiary,uint256 _amount,bytes32)
+    function stakingTokenTransfer(ERC20 _stakingToken,address _beneficiary,uint256 _amount,bytes32)
     external
     onlyOwner
     returns(bool)
@@ -59,12 +59,12 @@ contract AbsoluteVoteExecuteMock is Debug,VotingMachineCallbacksInterface,Propos
         return _stakingToken.transfer(_beneficiary,_amount);
     }
 
-    function balanceOfStakingToken(StandardToken _stakingToken,bytes32)
+    function balanceOfStakingToken(ERC20 _stakingToken,bytes32)
     external
     view
     returns(uint256)
     {
-        return _stakingToken.balanceOf(this);
+        return _stakingToken.balanceOf(address(this));
     }
 
     function executeProposal(bytes32 _proposalId,int _decision) external returns(bool) {
