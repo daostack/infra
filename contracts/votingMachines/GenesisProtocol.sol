@@ -278,16 +278,4 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
     function score(bytes32 _proposalId) public view returns(uint256) {
         return  _score(_proposalId);
     }
-
-    function getVoter(bytes32 _proposalId,address _voter) private view returns(address voter) {
-        Proposal storage proposal = proposals[_proposalId];
-        Parameters memory params = parameters[proposal.paramsHash];
-        if (params.voteOnBehalf != address(0)) {
-            require(msg.sender == params.voteOnBehalf);
-            voter = _voter;
-        } else {
-            voter = msg.sender;
-        }
-    }
-
 }
