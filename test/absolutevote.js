@@ -725,7 +725,7 @@ contract('AbsoluteVote', accounts => {
     let absoluteVote1 = await AbsoluteVote.new();
     absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new(reputation.address,absoluteVote1.address);
     await absoluteVote1.setParameters(30, helpers.NULL_ADDRESS);
-    const paramsHash1 = await absoluteVote1.getParametersHash( 30, false);
+    const paramsHash1 = await absoluteVote1.getParametersHash( 30, helpers.NULL_ADDRESS);
     let tx1 = await absoluteVoteExecuteMock.propose(6, paramsHash1, absoluteVoteExecuteMock.address,accounts[0],helpers.NULL_ADDRESS);
     const proposalId1 = await helpers.getProposalId(tx1,absoluteVote1,"NewProposal");
 

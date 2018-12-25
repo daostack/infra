@@ -55,9 +55,9 @@
     "solc": "^0.4.25",
     "solc-cli": "^0.3.0",
     "solium": "^1.1.8",
-    "truffle": "5.0.0-beta.1",
+    "truffle": "5.0.0",
     "uint32": "^0.2.1",
-    "web3-utils": "^1.0.0-beta.36"
+    "web3-utils": "^1.0.0-beta.37"
   },
   "repository": {
     "type": "git",
@@ -73,7 +73,7 @@
     "arc"
   ],
   "engines": {
-    "node": ">=10.13.0"
+    "node": ">=10.14.2"
   },
   "author": "DAOstack (https://www.daostack.io)",
   "license": "GPL-3.0",
