@@ -2,7 +2,7 @@
 var ERC827TokenMock = artifacts.require("./ERC827TokenMock.sol");
 const GenesisProtocol = artifacts.require("./GenesisProtocol.sol");
 var constants = require('../test/constants');
-const helpers = require('../test/helpers');
+
 let accounts;
 module.exports = async function(deployer) {
     await web3.eth.getAccounts(function(err,res) { accounts = res; });
