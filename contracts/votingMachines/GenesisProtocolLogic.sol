@@ -101,6 +101,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
     uint256 public proposalsCnt; // Total number of proposals
     StandardToken public stakingToken;
     address constant GEN_TOKEN_ADDRESS = 0x543Ff227F64Aa17eA132Bf9886cAb5DB55DCAddf;
+    uint256 constant MAX_BOOSTED_PROPOSALS = 4096;
 
     /**
      * @dev Constructor
@@ -485,7 +486,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 confidenceThreshold = threshold(proposal.paramsHash,proposal.organizationId);
               // solium-disable-next-line security/no-block-members
                 if ((now - proposal.times[2]) >= params.preBoostedVotePeriodLimit) {
-                    if (_score(_proposalId) > confidenceThreshold) {
+                    if ((_score(_proposalId) > confidenceThreshold) && (orgBoostedProposalsCnt[proposal.organizationId] < MAX_BOOSTED_PROPOSALS)) {
                        //change proposal mode to Boosted mode.
                         proposal.state = ProposalState.Boosted;
                        // solium-disable-next-line security/no-block-members
@@ -551,10 +552,16 @@ contract GenesisProtocolLogic is IntVoteInterface {
         // 0 is not a valid vote.
         require(_vote <= NUM_OF_CHOICES && _vote > 0);
         require(_amount > 0);
+        //This is to prevent average downstakes calculation overflow
+        //Note that any how GEN cap is 100000000 ether.
+        //_mount * MAX_BOOSTED_PROPOSALS should not overflow as int216
+        require (_amount <= 0x7fffffffffffffffffffffffffffffffffffffffffffffff,"staking amount is too high");
+
+
+        require(_amount > 0);
         if (_execute(_proposalId)) {
             return true;
         }
-
         Proposal storage proposal = proposals[_proposalId];
 
         if ((proposal.state != ProposalState.PreBoosted) &&

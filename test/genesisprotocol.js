@@ -6,6 +6,7 @@ const ERC827TokenMock = artifacts.require('./test/ERC827TokenMock.sol');
 const GenesisProtocolCallbacks = artifacts.require("./GenesisProtocolCallbacksMock.sol");
 var ethereumjs = require('ethereumjs-abi');
 const Reputation = artifacts.require("./Reputation.sol");
+const BigNumber = require('bignumber.js');
 
 export class GenesisProtocolParams {
   constructor() {
@@ -54,7 +55,6 @@ const setupGenesisProtocolParams = async function(
                                                  voteOnBehalf);
   return genesisProtocolParams;
 };
-
 var YES,NO;
 const setup = async function (accounts,
                               _voteOnBehalf = helpers.NULL_ADDRESS,
@@ -70,7 +70,7 @@ const setup = async function (accounts,
                               _daoBountyConst=10,
                               _activationTime=0) {
    var testSetup = new helpers.TestSetup();
-   testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],web3.utils.toWei("100000000"));
+   testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],web3.utils.toWei(((new BigNumber(2)).pow(200)).toString(10)));
    testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
    testSetup.reputationArray = [20, 10, 70 ];
    testSetup.org = {};
@@ -736,7 +736,7 @@ contract('GenesisProtocol', accounts => {
     }
 
     // Vote with a very big number - exception should be raised
-    let BigNumber = require('bignumber.js');
+
     let bigNum = ((new BigNumber(2)).toPower(254)).toString(10);
     try {
       await testSetup.genesisProtocol.vote(proposalId, 1, bigNum, helpers.NULL_ADDRESS);
@@ -800,11 +800,36 @@ contract('GenesisProtocol', accounts => {
 
     var proposalId = await propose(testSetup);
     var tx = await stake(testSetup,proposalId,1,10,accounts[0]);
+
     assert.equal(tx.length, 1);
     assert.equal(tx[0].event, "Stake");
     assert.equal(tx[0].args._staker, accounts[0]);
     assert.equal(tx[0].args._vote, 1);
     assert.equal(tx[0].args._amount, 10);
+  });
+
+
+  it("stake more than allowed.", async () => {
+
+    var testSetup = await setup(accounts);
+
+    var proposalId = await propose(testSetup);
+    let maxStakePlusOne = ((new BigNumber(2)).toPower(192).sub(1).div(2).add(1).floor()).toString(10);
+    let maxStake = ((new BigNumber(2)).toPower(192).sub(1).div(2).floor()).toString(10);
+
+    try {
+        await stake(testSetup,proposalId,1,maxStakePlusOne,accounts[0]);
+        assert(false, 'stake more than allowed should revert');
+      } catch (ex) {
+        helpers.assertVMException(ex);
+      }
+
+    var tx = await stake(testSetup,proposalId,1,maxStake,accounts[0]);
+    assert.equal(tx.length, 1);
+    assert.equal(tx[0].event, "Stake");
+    assert.equal(tx[0].args._staker, accounts[0]);
+    assert.equal(tx[0].args._vote, 1);
+    assert.equal(tx[0].args._amount, maxStake);
   });
 
   it("stake log", async () => {
@@ -1722,6 +1747,4 @@ contract('GenesisProtocol', accounts => {
       await propose(testSetup);
 
   });
-
-
 });
