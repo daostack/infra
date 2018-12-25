@@ -116,7 +116,6 @@ contract Reputation is Ownable {
         if (previousBalanceFrom < amountBurned) {
             amountBurned = previousBalanceFrom;
         }
-          //require(previousBalanceFrom >= _amount);
         updateValueAtNow(totalSupplyHistory, curTotalSupply - amountBurned);
         updateValueAtNow(balances[_user], previousBalanceFrom - amountBurned);
         emit Burn(_user, amountBurned);
