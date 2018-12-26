@@ -53,7 +53,7 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
      * @return bool true - the proposal has been executed
      *              false - otherwise.
      */
-    /* solium-disable-next-line */  
+    /* solium-disable-next-line */
     function stakeWithSignature(
         bytes32 _proposalId,
         uint256 _vote,
@@ -257,7 +257,7 @@ contract GenesisProtocol is IntVoteInterface,GenesisProtocolLogic {
                max - maximum number of choices
      */
     function getAllowedRangeOfChoices() external pure returns(uint256 min,uint256 max) {
-        return (NUM_OF_CHOICES,NUM_OF_CHOICES);
+        return (YES,NO);
     }
 
     /**
