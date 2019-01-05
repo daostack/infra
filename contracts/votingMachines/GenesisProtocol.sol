@@ -28,7 +28,7 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     /**
      * @dev Constructor
      */
-    constructor(ERC20 _stakingToken)
+    constructor(IERC20 _stakingToken)
     public
     // solhint-disable-next-line no-empty-blocks
     GenesisProtocolLogic(_stakingToken) {
