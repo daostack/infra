@@ -21,8 +21,6 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     "uint256 Nonce"
     ));
 
-    // web3.eth.sign prefix
-    string public constant ETH_SIGN_PREFIX= "\x19Ethereum Signed Message:\n32";
     mapping(bytes=>bool) private stakeSignatures; //stake signatures
 
     /**
@@ -89,17 +87,13 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
             );
         } else {
             delegationDigest = keccak256(
-                abi.encodePacked(
-                    ETH_SIGN_PREFIX, keccak256(
                         abi.encodePacked(
                         address(this),
                         _proposalId,
                         _vote,
                         _amount,
                         _nonce)
-                    )
-                )
-            );
+                    ).toEthSignedMessageHash();
         }
         address staker = delegationDigest.recover(_signature);
         //a garbage staker address due to wrong signature will revert due to lack of approval and funds.
