@@ -31,8 +31,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint256 boostedVotePeriodLimit; //the time limit for a proposal to be in boost mode.
         uint256 preBoostedVotePeriodLimit; //the time limit for a proposal
                                           //to be in an preparation state (stable) before boosted.
-        int thresholdConst; //constant  for threshold calculation .
-                            //threshold =thresholdConst ** (numberOfBoostedProposals)
+        int256 thresholdConst; //constant  for threshold calculation .
+                                //threshold =thresholdConst ** (numberOfBoostedProposals)
         uint256 limitExponentValue;// an upper limit for numberOfBoostedProposals
                                    //in the threshold calculation to prevent overflow
         uint256 quietEndingPeriod; //quite ending period
@@ -375,7 +375,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         int256 power = int216(orgBoostedProposalsCnt[_organizationId]).toReal();
         Parameters storage params = parameters[_paramsHash];
 
-        if (power.fromReal() > int(params.limitExponentValue)) {
+        if (power.fromReal() > int256(params.limitExponentValue)) {
             power = int216(params.limitExponentValue).toReal();
         }
 
@@ -414,13 +414,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
         require(_params[9] > 0, "daoBountyConst should be > 0");
 
         bytes32 paramsHash = getParametersHash(_params, _voteOnBehalf);
-
-        int alpha = int216(_params[4]).fraction(int216(1000));
         //set a limit for power for a given alpha to prevent overflow
         uint256 limitExponent = 172;//for alpha less or equal 2
         uint256 j = 2;
-        for (uint256 i = 2; i < 16; i = i*2) {
-            if ((uint(alpha.fromReal()) > i) && (uint(alpha.fromReal()) <= i*2)) {
+        for (uint256 i = 2000; i < 16000; i = i*2) {
+            if ((_params[4] > i) && (_params[4] <= i*2)) {
                 limitExponent = limitExponent/j;
                 break;
             }
@@ -432,7 +430,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             queuedVotePeriodLimit: _params[1],
             boostedVotePeriodLimit: _params[2],
             preBoostedVotePeriodLimit: _params[3],
-            thresholdConst:alpha,
+            thresholdConst:int216(_params[4]).fraction(int216(1000)),
             limitExponentValue:limitExponent,
             quietEndingPeriod: _params[5],
             proposingRepReward: _params[6],
@@ -541,9 +539,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
                         // solium-disable-next-line indentation
                         averagesDownstakesOfBoosted[proposal.organizationId] =
                             uint256(int256(averageDownstakesOfBoosted) +
-                            ((int216(proposal.stakes[NO])-int216(averageDownstakesOfBoosted))
-                            .toReal().div(int216(orgBoostedProposalsCnt[proposal.organizationId]).toReal()))
-                            .fromReal());
+                            ((int256(proposal.stakes[NO])-int256(averageDownstakesOfBoosted))/
+                            int256(orgBoostedProposalsCnt[proposal.organizationId])));
                     }
                 } else { //check the Confidence level is stable
                     uint256 proposalScore = _score(_proposalId);
@@ -577,9 +574,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 } else {
                     averageDownstakesOfBoosted = averagesDownstakesOfBoosted[proposal.organizationId];
                     averagesDownstakesOfBoosted[proposal.organizationId] =
-                    uint256(int216(averageDownstakesOfBoosted.mul(boostedProposals+1)
-                    .sub(proposal.stakes[NO])).toReal()
-                    .div(int216(boostedProposals).toReal()).fromReal());
+                    (averageDownstakesOfBoosted.mul(boostedProposals+1).sub(proposal.stakes[NO]))/boostedProposals;
                 }
             }
             emit ExecuteProposal(
@@ -719,10 +714,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
      */
     function _score(bytes32 _proposalId) internal view returns(uint256) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.stakes[NO] == 0) {
-            return 0;
-        }
-        return uint((int216(proposal.stakes[YES]).toReal().div(int216(proposal.stakes[NO]).toReal())).fromReal());
+        //proposal.stakes[NO] cannot be zero as the dao downstake > 0 for each proposal.
+        return proposal.stakes[YES]/proposal.stakes[NO];
     }
 
     /**
