@@ -235,6 +235,67 @@ contract GenesisProtocolLogic is IntVoteInterface {
     }
 
     /**
+     * @dev hash the parameters, save them if necessary, and return the hash value
+     * @param _params a parameters array
+     *    _params[0] - _queuedVoteRequiredPercentage,
+     *    _params[1] - _queuedVotePeriodLimit, //the time limit for a proposal to be in an absolute voting mode.
+     *    _params[2] - _boostedVotePeriodLimit, //the time limit for a proposal to be in an relative voting mode.
+     *    _params[3] - _preBoostedVotePeriodLimit, //the time limit for a proposal to be in an preparation
+     *                  state (stable) before boosted.
+     *    _params[4] -_thresholdConst
+     *    _params[5] -_quietEndingPeriod
+     *    _params[6] -_proposingRepReward
+     *    _params[7] -_votersReputationLossRatio
+     *    _params[8] -_minimumDaoBounty
+     *    _params[9] -_daoBountyConst
+     *    _params[10] -_activationTime
+     * @param _voteOnBehalf - authorized to vote on behalf of others.
+    */
+    function setParameters(
+        uint[11] calldata _params, //use array here due to stack too deep issue.
+        address _voteOnBehalf
+    )
+    external
+    returns(bytes32)
+    {
+        require(_params[0] <= 100 && _params[0] >= 50, "50 <= queuedVoteRequiredPercentage <= 100");
+        require(_params[4] <= 16000 && _params[4] > 1000, "1000 < thresholdConst <= 16000");
+        require(_params[7] <= 100, "votersReputationLossRatio <= 100");
+        require(_params[2] >= _params[5], "boostedVotePeriodLimit >= quietEndingPeriod");
+        require(_params[8] > 0, "minimumDaoBounty should be > 0");
+        require(_params[9] > 0, "daoBountyConst should be > 0");
+
+        bytes32 paramsHash = getParametersHash(_params, _voteOnBehalf);
+        //set a limit for power for a given alpha to prevent overflow
+        uint256 limitExponent = 172;//for alpha less or equal 2
+        uint256 j = 2;
+        for (uint256 i = 2000; i < 16000; i = i*2) {
+            if ((_params[4] > i) && (_params[4] <= i*2)) {
+                limitExponent = limitExponent/j;
+                break;
+            }
+            j++;
+        }
+
+        parameters[paramsHash] = Parameters({
+            queuedVoteRequiredPercentage: _params[0],
+            queuedVotePeriodLimit: _params[1],
+            boostedVotePeriodLimit: _params[2],
+            preBoostedVotePeriodLimit: _params[3],
+            thresholdConst:int216(_params[4]).fraction(int216(1000)),
+            limitExponentValue:limitExponent,
+            quietEndingPeriod: _params[5],
+            proposingRepReward: _params[6],
+            votersReputationLossRatio:_params[7],
+            minimumDaoBounty:_params[8],
+            daoBountyConst:_params[9],
+            activationTime:_params[10],
+            voteOnBehalf:_voteOnBehalf
+        });
+        return paramsHash;
+    }
+
+    /**
      * @dev redeem a reward for a successful stake, vote or proposing.
      * The function use a beneficiary address as a parameter (and not msg.sender) to enable
      * users to redeem on behalf of someone else.
@@ -301,7 +362,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         }
         if (rewards[0] != 0) {
             proposal.totalStakes = proposal.totalStakes.sub(rewards[0]);
-            require(stakingToken.transfer(_beneficiary, rewards[0]));
+            require(stakingToken.transfer(_beneficiary, rewards[0]), "transfer to beneficiary failed");
             emit Redeem(_proposalId, organizations[proposal.organizationId], _beneficiary, rewards[0]);
         }
         if ((rewards[1] + rewards[2]) != 0) {
@@ -380,67 +441,6 @@ contract GenesisProtocolLogic is IntVoteInterface {
         }
 
         return uint(params.thresholdConst.pow(power).fromReal());
-    }
-
-    /**
-     * @dev hash the parameters, save them if necessary, and return the hash value
-     * @param _params a parameters array
-     *    _params[0] - _queuedVoteRequiredPercentage,
-     *    _params[1] - _queuedVotePeriodLimit, //the time limit for a proposal to be in an absolute voting mode.
-     *    _params[2] - _boostedVotePeriodLimit, //the time limit for a proposal to be in an relative voting mode.
-     *    _params[3] - _preBoostedVotePeriodLimit, //the time limit for a proposal to be in an preparation
-     *                  state (stable) before boosted.
-     *    _params[4] -_thresholdConst
-     *    _params[5] -_quietEndingPeriod
-     *    _params[6] -_proposingRepReward
-     *    _params[7] -_votersReputationLossRatio
-     *    _params[8] -_minimumDaoBounty
-     *    _params[9] -_daoBountyConst
-     *    _params[10] -_activationTime
-     * @param _voteOnBehalf - authorized to vote on behalf of others.
-    */
-    function setParameters(
-        uint[11] memory _params, //use array here due to stack too deep issue.
-        address _voteOnBehalf
-    )
-    public
-    returns(bytes32)
-    {
-        require(_params[0] <= 100 && _params[0] >= 50, "50 <= queuedVoteRequiredPercentage <= 100");
-        require(_params[4] <= 16000 && _params[4] > 1000, "1000 < thresholdConst <= 16000");
-        require(_params[7] <= 100, "votersReputationLossRatio <= 100");
-        require(_params[2] >= _params[5], "boostedVotePeriodLimit >= quietEndingPeriod");
-        require(_params[8] > 0, "minimumDaoBounty should be > 0");
-        require(_params[9] > 0, "daoBountyConst should be > 0");
-
-        bytes32 paramsHash = getParametersHash(_params, _voteOnBehalf);
-        //set a limit for power for a given alpha to prevent overflow
-        uint256 limitExponent = 172;//for alpha less or equal 2
-        uint256 j = 2;
-        for (uint256 i = 2000; i < 16000; i = i*2) {
-            if ((_params[4] > i) && (_params[4] <= i*2)) {
-                limitExponent = limitExponent/j;
-                break;
-            }
-            j++;
-        }
-
-        parameters[paramsHash] = Parameters({
-            queuedVoteRequiredPercentage: _params[0],
-            queuedVotePeriodLimit: _params[1],
-            boostedVotePeriodLimit: _params[2],
-            preBoostedVotePeriodLimit: _params[3],
-            thresholdConst:int216(_params[4]).fraction(int216(1000)),
-            limitExponentValue:limitExponent,
-            quietEndingPeriod: _params[5],
-            proposingRepReward: _params[6],
-            votersReputationLossRatio:_params[7],
-            minimumDaoBounty:_params[8],
-            daoBountyConst:_params[9],
-            activationTime:_params[10],
-            voteOnBehalf:_voteOnBehalf
-        });
-        return paramsHash;
     }
 
   /**
@@ -678,10 +678,10 @@ contract GenesisProtocolLogic is IntVoteInterface {
         if ((proposal.votes[_vote] > proposal.votes[proposal.winningVote]) ||
             ((proposal.votes[NO] == proposal.votes[proposal.winningVote]) &&
             proposal.winningVote == YES)) {
-            if (((proposal.state == ProposalState.Boosted) &&
+            if (proposal.state == ProposalState.Boosted &&
             // solhint-disable-next-line not-rely-on-time
                 ((now - proposal.times[1]) >= (params.boostedVotePeriodLimit - params.quietEndingPeriod))||
-                (proposal.state == ProposalState.QuietEndingPeriod))) {
+                proposal.state == ProposalState.QuietEndingPeriod) {
                 //quietEndingPeriod
                 if (proposal.state != ProposalState.QuietEndingPeriod) {
                     proposal.currentBoostedVotePeriodLimit = params.quietEndingPeriod;
