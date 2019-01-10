@@ -2,4 +2,7 @@
 [![NPM Package](https://img.shields.io/npm/v/@daostack/infra.svg?style=flat-square)](https://www.npmjs.org/package/@daostack/infra)
 
 # Infra
-Base layer components for Governance such as Voting Machines and Reputation system.
+Infra contains [DAOstack](https://www.github.com/daostack)'s base layer components for decentralized governance such as voting machines and reputation system. 
+
+Infra is the stack layer where we expect most governance innovation to happen. Rather than full DAO governance services, Infra provides generalized decision-making mechanisms for any use, DAO or otherwise.
+
