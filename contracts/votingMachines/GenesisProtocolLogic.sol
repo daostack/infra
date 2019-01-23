@@ -112,7 +112,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         address indexed _beneficiary,
         uint256 _amount
     );
-
+    event StateChange(bytes32 indexed _proposalId, ProposalState _proposalState);
     event GPExecuteProposal(bytes32 indexed _proposalId, ExecutionState _executionState);
     event ExpirationCallBounty(bytes32 indexed _proposalId, address indexed _beneficiary, uint256 _amount);
 
@@ -586,6 +586,9 @@ contract GenesisProtocolLogic is IntVoteInterface {
             emit GPExecuteProposal(_proposalId, executionState);
             ProposalExecuteInterface(proposal.callbacks).executeProposal(_proposalId, int(proposal.winningVote));
             proposal.daoBounty = proposal.daoBountyRemain;
+        }
+        if (tmpProposal.state != proposal.state) {
+            emit StateChange(_proposalId, proposal.state);
         }
         return (executionState != ExecutionState.None);
     }
