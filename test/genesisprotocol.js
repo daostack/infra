@@ -25,7 +25,7 @@ const setupGenesisProtocolParams = async function(
                                             _proposingRepReward=60,
                                             _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
-                                            _daoBountyConst=10,
+                                            _daoBountyConst=1000,
                                             _activationTime=0,
                                             ) {
   var genesisProtocolParams = new GenesisProtocolParams();
@@ -67,7 +67,7 @@ const setup = async function (accounts,
                               _proposingRepReward=60,
                               _votersReputationLossRatio=10,
                               _minimumDaoBounty=15,
-                              _daoBountyConst=10,
+                              _daoBountyConst=1000,
                               _activationTime=0) {
    var testSetup = new helpers.TestSetup();
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],web3.utils.toWei(((new BigNumber(2)).pow(200)).toString(10)));
