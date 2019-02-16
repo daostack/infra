@@ -48,7 +48,7 @@ contract Reputation is Ownable {
 
     /// @dev This function makes it easy to get the total number of reputation
     /// @return The total number of reputation
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public view returns (uint128) {
         return totalSupplyAt(block.number);
     }
 
@@ -59,7 +59,7 @@ contract Reputation is Ownable {
     * @dev return the reputation amount of a given owner
     * @param _owner an address of the owner which we want to get his reputation
     */
-    function balanceOf(address _owner) public view returns (uint256 balance) {
+    function balanceOf(address _owner) public view returns (uint128 balance) {
         return balanceOfAt(_owner, block.number);
     }
 
@@ -68,7 +68,7 @@ contract Reputation is Ownable {
       /// @param _blockNumber The block number when the balance is queried
       /// @return The balance at `_blockNumber`
     function balanceOfAt(address _owner, uint256 _blockNumber)
-    public view returns (uint256)
+    public view returns (uint128)
     {
         if ((balances[_owner].length == 0) || (balances[_owner][0].fromBlock > _blockNumber)) {
             return 0;
@@ -81,7 +81,7 @@ contract Reputation is Ownable {
       /// @notice Total amount of reputation at a specific `_blockNumber`.
       /// @param _blockNumber The block number when the totalSupply is queried
       /// @return The total amount of reputation at `_blockNumber`
-    function totalSupplyAt(uint256 _blockNumber) public view returns(uint256) {
+    function totalSupplyAt(uint256 _blockNumber) public view returns(uint128) {
         if ((totalSupplyHistory.length == 0) || (totalSupplyHistory[0].fromBlock > _blockNumber)) {
             return 0;
           // This will return the expected totalSupply during normal situations
@@ -130,7 +130,7 @@ contract Reputation is Ownable {
       /// @param checkpoints The history of values being queried
       /// @param _block The block number to retrieve the value at
       /// @return The number of reputation being queried
-    function getValueAt(Checkpoint[] storage checkpoints, uint256 _block) internal view returns (uint256) {
+    function getValueAt(Checkpoint[] storage checkpoints, uint256 _block) internal view returns (uint128) {
         if (checkpoints.length == 0) {
             return 0;
         }
@@ -147,7 +147,9 @@ contract Reputation is Ownable {
         uint256 min = 0;
         uint256 max = checkpoints.length-1;
         while (max > min) {
-            uint256 mid = (max + min + 1) / 2;
+            uint256 mid = (max + min + 1);
+            require(mid > max);
+            mid = mid / 2;
             if (checkpoints[mid].fromBlock<=_block) {
                 min = mid;
             } else {
@@ -162,7 +164,7 @@ contract Reputation is Ownable {
       /// @param checkpoints The history of data being updated
       /// @param _value The new number of reputation
     function updateValueAtNow(Checkpoint[] storage checkpoints, uint256 _value) internal {
-        require(uint128(_value) == _value); //check value is in the 128 bits bounderies
+        require(uint128(_value) == _value); //check value is in the 128 bits boundaries
         if ((checkpoints.length == 0) || (checkpoints[checkpoints.length - 1].fromBlock < block.number)) {
             Checkpoint storage newCheckPoint = checkpoints[checkpoints.length++];
             newCheckPoint.fromBlock = uint128(block.number);
