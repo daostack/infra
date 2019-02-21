@@ -311,8 +311,6 @@ contract GenesisProtocolLogic is IntVoteInterface {
      */
     function redeem(bytes32 _proposalId, address _beneficiary) public returns (uint[3] memory rewards) {
         Proposal storage proposal = proposals[_proposalId];
-        require((proposal.state == ProposalState.Executed)||(proposal.state == ProposalState.ExpiredInQueue),
-        "Proposal should be Executed or ExpiredInQueue");
         rewards = getRewards(_proposalId, _beneficiary);
         if (rewards[0] != 0) {
             proposal.stakers[_beneficiary].amount = 0;
@@ -354,7 +352,6 @@ contract GenesisProtocolLogic is IntVoteInterface {
     public
     returns(uint256 redeemedAmount, uint256 potentialAmount) {
         Proposal storage proposal = proposals[_proposalId];
-        require(proposal.state == ProposalState.Executed);
         potentialAmount = getDaoBountyReward(_proposalId, _beneficiary);
 
         if ((potentialAmount != 0)&&
@@ -411,6 +408,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
      // solhint-disable-next-line function-max-lines,code-complexity
     function getRewards(bytes32 _proposalId, address _beneficiary) public view returns (uint[3] memory rewards) {
         Proposal storage proposal = proposals[_proposalId];
+        require((proposal.state == ProposalState.Executed)||(proposal.state == ProposalState.ExpiredInQueue),
+        "Proposal should be Executed or ExpiredInQueue");
         Parameters memory params = parameters[proposal.paramsHash];
         uint256 lostReputation;
         if (proposal.winningVote == YES) {
@@ -468,6 +467,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
      */
     function getDaoBountyReward(bytes32 _proposalId, address _beneficiary) public view returns(uint256 reward) {
         Proposal storage proposal = proposals[_proposalId];
+        require(proposal.state == ProposalState.Executed, "Proposal should be Executed");
         uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
         Staker storage staker = proposal.stakers[_beneficiary];
         if (
