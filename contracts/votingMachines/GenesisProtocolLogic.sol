@@ -309,60 +309,21 @@ contract GenesisProtocolLogic is IntVoteInterface {
      *           [1] voterReputationReward
      *           [2] proposerReputationReward
      */
-     // solhint-disable-next-line function-max-lines,code-complexity
     function redeem(bytes32 _proposalId, address _beneficiary) public returns (uint[3] memory rewards) {
         Proposal storage proposal = proposals[_proposalId];
         require((proposal.state == ProposalState.Executed)||(proposal.state == ProposalState.ExpiredInQueue),
         "Proposal should be Executed or ExpiredInQueue");
-        Parameters memory params = parameters[proposal.paramsHash];
-        uint256 lostReputation;
-        if (proposal.winningVote == YES) {
-            lostReputation = proposal.preBoostedVotes[NO];
-        } else {
-            lostReputation = proposal.preBoostedVotes[YES];
+        rewards = getRewards(_proposalId, _beneficiary);
+        if (rewards[0] != 0) {
+            proposal.stakers[_beneficiary].amount = 0;
         }
-        lostReputation = (lostReputation.mul(params.votersReputationLossRatio))/100;
-        //as staker
-        Staker storage staker = proposal.stakers[_beneficiary];
-        if (staker.amount > 0) {
-            if (proposal.state == ProposalState.ExpiredInQueue) {
-                //Stakes of a proposal that expires in Queue are sent back to stakers
-                rewards[0] = staker.amount;
-            } else if (staker.vote == proposal.winningVote) {
-                uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
-                uint256 totalStakes = proposal.stakes[YES].add(proposal.stakes[NO]);
-                if (staker.vote == YES) {
-                    uint256 _totalStakes =
-                    ((totalStakes.mul(100 - proposal.expirationCallBountyPercentage))/100) - proposal.daoBounty;
-                    rewards[0] = (staker.amount.mul(_totalStakes))/totalWinningStakes;
-                } else {
-                    rewards[0] = (staker.amount.mul(totalStakes))/totalWinningStakes;
-                    if (organizations[proposal.organizationId] == _beneficiary) {
-                          //dao redeem it reward
-                        rewards[0] = rewards[0].sub(proposal.daoBounty);
-                    }
-                }
-            }
-            staker.amount = 0;
+        if (rewards[1] != 0) {
+            proposal.voters[_beneficiary].reputation = 0;
         }
-        //as voter
-        Voter storage voter = proposal.voters[_beneficiary];
-        if ((voter.reputation != 0) && (voter.preBoosted)) {
-            if (proposal.state == ProposalState.ExpiredInQueue) {
-              //give back reputation for the voter
-                rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100);
-            } else if (proposal.winningVote == voter.vote) {
-                uint256 preBoostedVotes = proposal.preBoostedVotes[YES].add(proposal.preBoostedVotes[NO]);
-                rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100)
-                .add((voter.reputation.mul(lostReputation))/preBoostedVotes);
-            }
-            voter.reputation = 0;
-        }
-        //as proposer
-        if ((proposal.proposer == _beneficiary)&&(proposal.winningVote == YES)&&(proposal.proposer != address(0))) {
-            rewards[2] = params.proposingRepReward;
+        if (rewards[2] != 0) {
             proposal.proposer = address(0);
         }
+
         if (rewards[0] != 0) {
             proposal.totalStakes = proposal.totalStakes.sub(rewards[0]);
             require(stakingToken.transfer(_beneficiary, rewards[0]), "transfer to beneficiary failed");
@@ -394,20 +355,12 @@ contract GenesisProtocolLogic is IntVoteInterface {
     returns(uint256 redeemedAmount, uint256 potentialAmount) {
         Proposal storage proposal = proposals[_proposalId];
         require(proposal.state == ProposalState.Executed);
-        uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
-        Staker storage staker = proposal.stakers[_beneficiary];
-        if (
-            (staker.amount4Bounty > 0)&&
-            (staker.vote == proposal.winningVote)&&
-            (proposal.winningVote == YES)&&
-            (totalWinningStakes != 0)) {
-            //as staker
-                potentialAmount = (staker.amount4Bounty * proposal.daoBounty)/totalWinningStakes;
-            }
+        potentialAmount = getDaoBountyReward(_proposalId, _beneficiary);
+
         if ((potentialAmount != 0)&&
             (VotingMachineCallbacksInterface(proposal.callbacks)
             .balanceOfStakingToken(stakingToken, _proposalId) >= potentialAmount)) {
-            staker.amount4Bounty = 0;
+            proposal.stakers[_beneficiary].amount4Bounty = 0;
             proposal.daoBountyRemain = proposal.daoBountyRemain.sub(potentialAmount);
             require(
             VotingMachineCallbacksInterface(proposal.callbacks)
@@ -444,6 +397,88 @@ contract GenesisProtocolLogic is IntVoteInterface {
         }
 
         return params.thresholdConst.pow(power);
+    }
+
+    /**
+     * @dev getRewards get the rewards for a successful stake, vote or proposing.
+     * @param _proposalId the ID of the proposal
+     * @param _beneficiary - the beneficiary address
+     * @return rewards -
+     *           [0] stakerTokenReward
+     *           [1] voterReputationReward
+     *           [2] proposerReputationReward
+     */
+     // solhint-disable-next-line function-max-lines,code-complexity
+    function getRewards(bytes32 _proposalId, address _beneficiary) public view returns (uint[3] memory rewards) {
+        Proposal storage proposal = proposals[_proposalId];
+        Parameters memory params = parameters[proposal.paramsHash];
+        uint256 lostReputation;
+        if (proposal.winningVote == YES) {
+            lostReputation = proposal.preBoostedVotes[NO];
+        } else {
+            lostReputation = proposal.preBoostedVotes[YES];
+        }
+        lostReputation = (lostReputation.mul(params.votersReputationLossRatio))/100;
+        //as staker
+        Staker storage staker = proposal.stakers[_beneficiary];
+        if (staker.amount > 0) {
+            if (proposal.state == ProposalState.ExpiredInQueue) {
+                //Stakes of a proposal that expires in Queue are sent back to stakers
+                rewards[0] = staker.amount;
+            } else if (staker.vote == proposal.winningVote) {
+                uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
+                uint256 totalStakes = proposal.stakes[YES].add(proposal.stakes[NO]);
+                if (staker.vote == YES) {
+                    uint256 _totalStakes =
+                    ((totalStakes.mul(100 - proposal.expirationCallBountyPercentage))/100) - proposal.daoBounty;
+                    rewards[0] = (staker.amount.mul(_totalStakes))/totalWinningStakes;
+                } else {
+                    rewards[0] = (staker.amount.mul(totalStakes))/totalWinningStakes;
+                    if (organizations[proposal.organizationId] == _beneficiary) {
+                          //dao redeem it reward
+                        rewards[0] = rewards[0].sub(proposal.daoBounty);
+                    }
+                }
+            }
+        }
+        //as voter
+        Voter storage voter = proposal.voters[_beneficiary];
+        if ((voter.reputation != 0) && (voter.preBoosted)) {
+            if (proposal.state == ProposalState.ExpiredInQueue) {
+              //give back reputation for the voter
+                rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100);
+            } else if (proposal.winningVote == voter.vote) {
+                uint256 preBoostedVotes = proposal.preBoostedVotes[YES].add(proposal.preBoostedVotes[NO]);
+                rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100)
+                .add((voter.reputation.mul(lostReputation))/preBoostedVotes);
+            }
+        }
+        //as proposer
+        if ((proposal.proposer == _beneficiary)&&(proposal.winningVote == YES)&&(proposal.proposer != address(0))) {
+            rewards[2] = params.proposingRepReward;
+        }
+    }
+
+    /**
+     * @dev getDaoBountyReward get a reward for a successful stake.
+     * @param _proposalId the ID of the proposal
+     * @param _beneficiary - the beneficiary address
+     * @return reward - the dao bounty reward
+     * @return potentialAmount - potential redeem token amount(if there is enough tokens bounty at the organization )
+     */
+    function getDaoBountyReward(bytes32 _proposalId, address _beneficiary) public view returns(uint256 reward) {
+        Proposal storage proposal = proposals[_proposalId];
+        uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
+        Staker storage staker = proposal.stakers[_beneficiary];
+        if (
+            (staker.amount4Bounty > 0)&&
+            (staker.vote == proposal.winningVote)&&
+            (proposal.winningVote == YES)&&
+            (totalWinningStakes != 0)) {
+            //as staker
+                reward = (staker.amount4Bounty * proposal.daoBounty)/totalWinningStakes;
+            }
+
     }
 
   /**
