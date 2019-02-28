@@ -345,9 +345,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         }
             //dao redeem its winnings
         if (proposal.daoRedeemItsWinnings == false && _beneficiary == organizations[proposal.organizationId]) {
-            if (proposal.state == ProposalState.ExpiredInQueue) {
-                rewards[0] = rewards[0].add(proposal.daoBounty);
-            } else if (proposal.winningVote == NO) {
+
+            if (proposal.winningVote == NO) {
                 rewards[0] =
                 rewards[0].add((proposal.daoBounty.mul(totalStakes))/totalWinningStakes).sub(proposal.daoBounty);
             }
