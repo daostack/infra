@@ -1280,7 +1280,7 @@ contract('GenesisProtocol', accounts => {
 
       var votersReputationLossRatio=20;
       var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,votersReputationLossRatio,15,10);
-
+      var totalRepSupply = await testSetup.org.reputation.totalSupply();
       var proposalId = await propose(testSetup,proposer);
 
       await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:voterY});
@@ -1296,10 +1296,9 @@ contract('GenesisProtocol', accounts => {
       var redeemReputation = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
       var repVoterY = testSetup.reputationArray[0];
       var repVoterN = testSetup.reputationArray[1];
-      var preBoostedVotes = repVoterY + repVoterN;
       var lostReputation = (repVoterN * votersReputationLossRatio)/100;
       var voterYRepDeposit = (repVoterY * votersReputationLossRatio)/100;
-      assert.equal(redeemReputation,Math.round(voterYRepDeposit + (repVoterY *lostReputation)/ preBoostedVotes));
+      assert.equal(redeemReputation,Math.round(voterYRepDeposit + (repVoterY *lostReputation)/ repVoterY));
       assert.equal(redeemToken,0);
       var tx = await testSetup.genesisProtocol.redeem(proposalId,voterY);
       assert.equal(tx.logs.length, 1);
@@ -1308,7 +1307,9 @@ contract('GenesisProtocol', accounts => {
       assert.equal(tx.logs[0].args._beneficiary, voterY);
       assert.equal(tx.logs[0].args._amount, redeemReputation);
       assert.equal(balanceOfVoterY.eq(await testSetup.stakingToken.balanceOf(voterY)),true);
-      assert.equal(await testSetup.org.reputation.balanceOf(voterY),Math.round(repVoterY+(repVoterY *lostReputation)/ preBoostedVotes));
+      assert.equal(await testSetup.org.reputation.balanceOf(voterY),Math.round(repVoterY+(repVoterY *lostReputation)/ repVoterY));
+      //check rep sum zero
+      assert.equal(totalRepSupply.toNumber(), (await testSetup.org.reputation.totalSupply()).toNumber());
     });
 
     it("reputation flow for unsuccessful voting", async () => {

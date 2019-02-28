@@ -352,9 +352,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
               //give back reputation for the voter
                 rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100);
             } else if (proposal.winningVote == voter.vote) {
-                uint256 preBoostedVotes = proposal.preBoostedVotes[YES].add(proposal.preBoostedVotes[NO]);
                 rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100)
-                .add((voter.reputation.mul(lostReputation))/preBoostedVotes);
+                .add((voter.reputation.mul(lostReputation))/proposal.preBoostedVotes[proposal.winningVote]);
             }
             voter.reputation = 0;
         }
