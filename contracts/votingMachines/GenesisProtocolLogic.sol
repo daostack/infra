@@ -333,7 +333,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
                 uint256 totalStakes = proposal.stakes[NO].add(proposal.stakes[YES]);
                 if (staker.vote == YES) {
-                    uint256 totalStakesLeftAfterCallBounty = totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
+                    uint256 totalStakesLeftAfterCallBounty = 
+                    totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
                     if (proposal.daoBounty < totalStakesLeftAfterCallBounty) {
                         uint256 _totalStakes = totalStakesLeftAfterCallBounty.sub(proposal.daoBounty);
                         rewards[0] = (staker.amount.mul(_totalStakes))/totalWinningStakes;
