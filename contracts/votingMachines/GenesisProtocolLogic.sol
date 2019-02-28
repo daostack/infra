@@ -119,8 +119,6 @@ contract GenesisProtocolLogic is IntVoteInterface {
     event GPExecuteProposal(bytes32 indexed _proposalId, ExecutionState _executionState);
     event ExpirationCallBounty(bytes32 indexed _proposalId, address indexed _beneficiary, uint256 _amount);
     event ConfidenceLevelChange(bytes32 indexed _proposalId, uint256 _confidenceThreshold);
-    event D(address _a);
-    event DU(uint _a);
 
     mapping(bytes32=>Parameters) public parameters;  // A mapping from hashes to parameters
     mapping(bytes32=>Proposal) public proposals; // Mapping from the ID of the proposal to the proposal itself.
