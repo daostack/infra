@@ -1558,7 +1558,6 @@ contract('GenesisProtocol', accounts => {
 
       var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,testSetup.genesisProtocolCallbacks.address);
       var redeemToken = redeemRewards[0].toNumber();
-      //assert.equal(redeemToken,100);
       var tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
       proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
       assert.equal(proposalInfo[9],15);
@@ -1567,6 +1566,11 @@ contract('GenesisProtocol', accounts => {
       assert.equal(tx.logs[0].args._proposalId, proposalId);
       assert.equal(tx.logs[0].args._beneficiary, testSetup.genesisProtocolCallbacks.address);
       assert.equal(tx.logs[0].args._amount, redeemToken);
+
+      //cannot redeem twice
+      tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
+      assert.equal(tx.logs.length,0);
+
   });
 
 

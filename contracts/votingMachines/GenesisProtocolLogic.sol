@@ -77,6 +77,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint[3] times; //times[0] - submittedTime
                        //times[1] - boostedPhaseTime
                        //times[2] -preBoostedPhaseTime;
+        bool daoRedeemItsWinnings;
         //      vote      reputation
         mapping(uint256   =>  uint256    ) votes;
         //      vote      reputation
@@ -118,6 +119,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
     event GPExecuteProposal(bytes32 indexed _proposalId, ExecutionState _executionState);
     event ExpirationCallBounty(bytes32 indexed _proposalId, address indexed _beneficiary, uint256 _amount);
     event ConfidenceLevelChange(bytes32 indexed _proposalId, uint256 _confidenceThreshold);
+    event D(address _a);
+    event DU(uint _a);
 
     mapping(bytes32=>Parameters) public parameters;  // A mapping from hashes to parameters
     mapping(bytes32=>Proposal) public proposals; // Mapping from the ID of the proposal to the proposal itself.
@@ -208,9 +211,6 @@ contract GenesisProtocolLogic is IntVoteInterface {
         proposal.totalStakes = proposal.daoBountyRemain;
         proposals[proposalId] = proposal;
         proposals[proposalId].stakes[NO] = proposal.daoBountyRemain;//dao downstake on the proposal
-        Staker storage staker = proposals[proposalId].stakers[organizations[proposal.organizationId]];
-        staker.vote = NO;
-        staker.amount = proposal.daoBountyRemain;
 
         emit NewProposal(proposalId, organizations[proposal.organizationId], NUM_OF_CHOICES, _proposer, _paramsHash);
         return proposalId;
@@ -325,15 +325,15 @@ contract GenesisProtocolLogic is IntVoteInterface {
         lostReputation = (lostReputation.mul(params.votersReputationLossRatio))/100;
         //as staker
         Staker storage staker = proposal.stakers[_beneficiary];
+        uint256 totalStakes = proposal.stakes[NO].add(proposal.stakes[YES]);
+        uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
         if (staker.amount > 0) {
             if (proposal.state == ProposalState.ExpiredInQueue) {
                 //Stakes of a proposal that expires in Queue are sent back to stakers
                 rewards[0] = staker.amount;
             } else if (staker.vote == proposal.winningVote) {
-                uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
-                uint256 totalStakes = proposal.stakes[NO].add(proposal.stakes[YES]);
                 if (staker.vote == YES) {
-                    uint256 totalStakesLeftAfterCallBounty = 
+                    uint256 totalStakesLeftAfterCallBounty =
                     totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
                     if (proposal.daoBounty < totalStakesLeftAfterCallBounty) {
                         uint256 _totalStakes = totalStakesLeftAfterCallBounty.sub(proposal.daoBounty);
@@ -341,14 +341,21 @@ contract GenesisProtocolLogic is IntVoteInterface {
                     }
                 } else {
                     rewards[0] = (staker.amount.mul(totalStakes))/totalWinningStakes;
-                    if (organizations[proposal.organizationId] == _beneficiary) {
-                          //dao redeem it reward
-                        rewards[0] = rewards[0].sub(proposal.daoBounty);
-                    }
                 }
             }
             staker.amount = 0;
         }
+            //dao redeem its winnings
+        if (proposal.daoRedeemItsWinnings == false && _beneficiary == organizations[proposal.organizationId]) {
+            if (proposal.state == ProposalState.ExpiredInQueue) {
+                rewards[0] = rewards[0].add(proposal.daoBounty);
+            } else if (proposal.winningVote == NO) {
+                rewards[0] =
+                rewards[0].add((proposal.daoBounty.mul(totalStakes))/totalWinningStakes).sub(proposal.daoBounty);
+            }
+            proposal.daoRedeemItsWinnings = true;
+        }
+
         //as voter
         Voter storage voter = proposal.voters[_beneficiary];
         if ((voter.reputation != 0) && (voter.preBoosted)) {
