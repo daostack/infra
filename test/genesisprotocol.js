@@ -695,1009 +695,1009 @@ contract('GenesisProtocol', accounts => {
 
   });
 
-  it('Proposal with wrong num of options', async function () {
-      var testSetup = await setup(accounts);
-
-    // 3 options - max is 2 - exception should be raised
-    try {
-      await testSetup.genesisProtocolCallbacks.propose(3, helpers.NULL_HASH, testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
-      assert(false, 'Tried to create a proposal with 3 options - max is 2');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-    // -5 options - exception should be raised
-    try {
-      await testSetup.genesisProtocolCallbacks.propose(-5, helpers.NULL_HASH, testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
-      assert(false, 'Tried to create an absolute vote with negative number of options');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-    // 0 options - exception should be raised
-    try {
-      await testSetup.genesisProtocolCallbacks.propose(0, helpers.NULL_HASH ,testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
-      assert(false, 'Tried to create an absolute vote with 0 number of options');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-  });
-
-  it('Test voteWithSpecifiedAmounts - More reputation than I own, negative reputation, etc..', async function () {
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-
-
-    // Vote with the reputation the I own - should work
-    let tx = await testSetup.genesisProtocol.vote(proposalId, 1, testSetup.reputationArray[0] / 10, helpers.NULL_ADDRESS);
-
-    var repVoted = await helpers.getValueFromLogs(tx, "_reputation");
-
-    assert.equal(repVoted, testSetup.reputationArray[0] / 10, 'Should vote with specified amount');
-
-    // Vote with more reputation that i own - exception should be raised
-    try {
-      await testSetup.genesisProtocol.vote(proposalId, 1, (testSetup.reputationArray[1] + 1), helpers.NULL_ADDRESS,{from:accounts[1]});
-      assert(false, 'Not enough reputation - voting shouldn\'t work');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-    // Vote with a very big number - exception should be raised
-
-    let bigNum = ((new BigNumber(2)).toPower(254)).toString(10);
-    try {
-      await testSetup.genesisProtocol.vote(proposalId, 1, bigNum, helpers.NULL_ADDRESS);
-      assert(false, 'Voting shouldn\'t work');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-  });
-
-  it("Internal functions can not be called externally", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    // Lets try to call internalVote function
-    try {
-      await testSetup.genesisProtocol.internalVote(proposalId, accounts[0], 1, testSetup.reputationArray[0]);
-      assert(false, 'Can\'t call internalVote');
-    } catch (ex) {
-      helpers.assertInternalFunctionException(ex);
-    }
-  });
-
-  it("Try to send wrong proposal id to the voting/cancel functions", async () => {
-
-    var testSetup = await setup(accounts);
-
-    await propose(testSetup);
-
-
-    // Lets try to call vote with invalid proposal id
-    try {
-      await testSetup.genesisProtocol.vote(helpers.NULL_HASH, 1,0,helpers.NULL_ADDRESS, {from: accounts[0]});
-      assert(false, 'Invalid proposal ID has been delivered');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-    // Lets try to call voteWithSpecifiedAmounts with invalid proposal id
-    try {
-      await testSetup.genesisProtocol.vote(helpers.NULL_HASH, 1, 1,helpers.NULL_ADDRESS);
-      assert(false, 'Invalid proposal ID has been delivered');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-    // Lets try to call execute with invalid proposal id
-    try {
-      await testSetup.genesisProtocol.execute(helpers.NULL_HASH);
-      assert(false, 'Invalid proposal ID has been delivered');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-  });
-
-  it("stake with approveAndCall log", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-    var tx = await stake(testSetup,proposalId,1,10,accounts[0]);
-
-    assert.equal(tx.length, 1);
-    assert.equal(tx[0].event, "Stake");
-    assert.equal(tx[0].args._staker, accounts[0]);
-    assert.equal(tx[0].args._vote, 1);
-    assert.equal(tx[0].args._amount, 10);
-  });
-
-
-  it("stake more than allowed.", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-    var proposalStatus  = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    let maxTotalStakeAllowed = ((new BigNumber(2)).toPower(128));
-    let maxTotalStakesRemain = maxTotalStakeAllowed.sub(proposalStatus[3]);
-
-    try {
-        await stake(testSetup,proposalId,1,maxTotalStakesRemain.add(1).toString(10),accounts[0]);
-        assert(false, 'stake more than allowed should revert');
-      } catch (ex) {
-        helpers.assertVMException(ex);
-      }
-
-    var tx = await stake(testSetup,proposalId,1,maxTotalStakesRemain.toString(10),accounts[0]);
-    assert.equal(tx.length, 1);
-    assert.equal(tx[0].event, "Stake");
-    assert.equal(tx[0].args._staker, accounts[0]);
-    assert.equal(tx[0].args._vote, 1);
-    assert.equal(tx[0].args._amount, maxTotalStakesRemain.toString(10));
-  });
-
-  it("stake log", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-    await testSetup.stakingToken.approve(testSetup.genesisProtocol.address,10);
-
-    var tx = await testSetup.genesisProtocol.stake(proposalId,1,10);
-    assert.equal(tx.logs.length, 1);
-    assert.equal(tx.logs[0].event, "Stake");
-    assert.equal(tx.logs[0].args._staker, accounts[0]);
-    assert.equal(tx.logs[0].args._vote, 1);
-    assert.equal(tx.logs[0].args._amount, 10);
-  });
-
-  it("check nonce ", async () => {
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
-    var proposalId = await propose(testSetup);
-
-    let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],0);
-    assert.equal(staker[1],0);
-
-    var tx = await stake(testSetup,proposalId,1,10,accounts[0]);
-    assert.equal(tx.length, 1);
-    assert.equal(tx[0].event, "Stake");
-    assert.equal(tx[0].args._staker, accounts[0]);
-    assert.equal(tx[0].args._vote, 1);
-    assert.equal(tx[0].args._amount, 10);
-    staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],1);
-    assert.equal(staker[1],10);
-    var nonce =  await testSetup.genesisProtocol.stakesNonce(accounts[0]);
-    nonce--;
-
-    var textMsg = "0x"+ethereumjs.soliditySHA3(
-        ["address","bytes32","uint", "uint","uint"],
-        [testSetup.genesisProtocol.address, proposalId,1,10, nonce.toString()]
-      ).toString("hex");
-    const signature = await web3.eth.sign(textMsg ,accounts[0]);
-    const encodeABI = await new web3.eth.Contract(testSetup.genesisProtocol.abi).methods.stakeWithSignature(proposalId,1,10,nonce.toString(),signatureType,signature).encodeABI();
-    try {
-     await testSetup.stakingToken.approveAndCall(
-        testSetup.genesisProtocol.address, 10, encodeABI ,{from : accounts[0]}
-      );
-      assert(false, 'stake should fail with the same nonce');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-  });
-
-  it("check stake with wrong signature ", async () => {
-
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
-
-    var proposalId = await propose(testSetup);
-
-    let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],0);
-    assert.equal(staker[1],0);
-    var nonce =  (await testSetup.genesisProtocol.stakesNonce(accounts[0])).toString();
-    var textMsg = "0x"+ethereumjs.soliditySHA3(
-        ["address","bytes32","uint", "uint","uint"],
-        [testSetup.genesisProtocol.address, proposalId,1,10, nonce]
-      ).toString("hex");
-    const signature = await web3.eth.sign(textMsg , accounts[0]);
-    proposalId = "0x1234"; //change proposalId
-    const encodeABI = await new web3.eth.Contract(testSetup.genesisProtocol.abi).methods.stakeWithSignature(proposalId,1,10,nonce,signatureType,signature).encodeABI();
-    try {
-     await testSetup.stakingToken.approveAndCall(
-        testSetup.genesisProtocol.address, 10, encodeABI ,{from : accounts[0]}
-      );
-      assert(false, 'stake should fail due to wrong signature');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-  });
-
-
-  it("multiple stakes ", async () => {
-
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
-
-    var proposalId = await propose(testSetup);
-
-
-    let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],0);
-    assert.equal(staker[1],0);
-
-    var tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
-    assert.equal(tx[0].event, "Stake");
-    assert.equal(tx[0].args._staker, accounts[0]);
-    assert.equal(tx[0].args._vote, 1);
-    assert.equal(tx[0].args._amount, 10);
-    staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],1);
-    assert.equal(staker[1],10);
-
-    //add more stake on the same vote
-    tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
-    assert.equal(tx[0].event, "Stake");
-    assert.equal(tx[0].args._staker, accounts[0]);
-    assert.equal(tx[0].args._vote, 1);
-    assert.equal(tx[0].args._amount, 10);
-    staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],1);
-    assert.equal(staker[1],20);
-    //try to stake with different vote as before
-    tx = await stake(testSetup,proposalId,2,10,accounts[0]);
-    staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
-    assert.equal(staker[0],1);
-    assert.equal(staker[1],20);
-
-    let proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[9],20+15); //totalStakes + dao downstake
-  });
-
-  it("stake without approval - fail", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-      try {
-        await testSetup.genesisProtocol.stake(proposalId,2,10);
-        assert(false, 'stake without approval should revert');
-      } catch (ex) {
-        helpers.assertVMException(ex);
-      }
-  });
-
-
-  it("stake with zero amount will fail", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    try {
-      await stake(testSetup,proposalId,1,0,accounts[0]);
-      assert(false, 'stake with zero amount should revert');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-  });
-
-  it("stake on boosted proposal is not allowed", async () => {
-
-    var testSetup = await setup(accounts);
-    var proposalId = await propose(testSetup);
-    //shift proposal to boosted phase
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],3);
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);  //state boosted
-    //S = (S+) /(S-)
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    var score = proposalStatus[2]/proposalStatus[3];
-    assert.equal(score,100/15);
-    //try to stake on boosted proposal should fail
-    var tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
-    assert.equal(tx.length, 0);
-  });
-
-  it("boost proposal", async () => {
-    var thresholdConst = 1700; //1.7
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConst,0,60,10,2);
-    var proposalId = await propose(testSetup);
-    //shift proposal to boosted phase
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],3);
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    await stake(testSetup,proposalId,YES,30,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],30+2); //totalStakes
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);  //state boosted
-    //S = (S+) /(S-)
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    var score = proposalStatus[2]/proposalStatus[3];
-    assert.equal(score,30/2);
-    //try to boost another proposal - score(confidence) should be higher than 1.7
-    proposalId = await propose(testSetup);
-    proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    assert.equal(proposalStatus[3].toNumber(),20);
-    await stake(testSetup,proposalId,YES,34,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    //not boosted yet because 34/20 = 1.7
-    assert.equal(proposalInfo[proposalStateIndex],3);
-    // upstake with 1 should be enough to boost
-    await stake(testSetup,proposalId,YES,1,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    assert.equal(proposalStatus[3].toNumber(),20);
-    assert.equal(proposalStatus[2].toNumber(),35);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);
-  });
-
-  it("stake on boosted dual proposal is not allowed", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    //shift proposal to boosted phase
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],3);
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-
-    //S* POW(R/totalR)
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    var score = proposalStatus[2]/proposalStatus[3];
-    assert.equal(score,100/15);
-
-    //try to stake on boosted proposal should fail
-    var tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
-    assert.equal(tx.length, 0);
-  });
-
-  it("shouldBoost ", async () => {
-    var testSetup = await setup(accounts);
-    var proposalId = await propose(testSetup);
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    var score = proposalStatus[2]/proposalStatus[3];
-    assert.equal(score,0);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),true);
-    proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    score = proposalStatus[2]/proposalStatus[3];
-    assert.equal(score,100/15);
-
-  });
-
-  it("average boosted downstake ", async () => {
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
-
-    //BOOST another proposal
-    proposalId = await propose(testSetup);
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    assert.equal(proposalStatus[3],150);//downstake
-    await stake(testSetup,proposalId,YES,web3.utils.toWei("3000"),accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),Math.floor((15+150)/2));
-    //expiere proposal by getting absolute majority
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
-    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),Math.floor((82*2-150)/1));
-
-  });
-
-  it("average boosted downstake with booster proposal == 0 ", async () => {
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    var score = proposalStatus[2]/proposalStatus[3];
-    assert.equal(score,0);
-
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
-
-    //expiere proposal by getting absolute majority
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
-    assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),0);
-  });
-
-
-  it("stake on none votable phase should revert ", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-    await testSetup.stakingToken.approve(testSetup.genesisProtocol.address,10);
-    //vote with majority. state is executed
-    await testSetup.genesisProtocol.vote(proposalId, 1,0,helpers.NULL_ADDRESS, { from: accounts[2] });
-
-    try {
-      await stake(testSetup,proposalId,1,0,accounts[0]);
-      assert(false, 'stake on executed phase should revert');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-  });
-
-  it("redeem ", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    var accounts0Balance = await testSetup.stakingToken.balanceOf(accounts[0]);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-    await helpers.increaseTime(61);
-    await testSetup.genesisProtocol.execute(proposalId);
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[8],15);
-    var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-    var redeemToken = redeemRewards[0].toNumber();
-    assert.equal(redeemToken,((100+15-15)*100)/100);
-    assert.equal(await testSetup.stakingToken.balanceOf(accounts[0]),accounts0Balance-100);
-    assert.equal(proposalInfo[9],100+15);
-    var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[9],15);
-    assert.equal(tx.logs.length,2);
-    assert.equal(tx.logs[0].event, "Redeem");
-    assert.equal(tx.logs[0].args._proposalId, proposalId);
-    assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
-    assert.equal(tx.logs[0].args._amount, redeemToken);
-    assert.equal(accounts0Balance.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
-  });
-
-  it("redeem without execution should revert", async () => {
-
-    var testSetup = await setup(accounts);
-
-    var proposalId = await propose(testSetup);
-
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-    await testSetup.genesisProtocol.execute(proposalId);
-    try {
-      await  testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-      assert(false, 'redeem before execution should revert');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-  });
-
-    it("dynamic threshold ", async () => {
-      var testSetup = await setup(accounts);
-
-      var thresholdConst = 2000/1000;
-
-
-      var proposalId = await propose(testSetup);
-      const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-
-      assert.equal(await threshold(testSetup),1);
-
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
-
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-      await stake(testSetup,proposalId,YES,100,accounts[0]);
-      assert.equal(await testSetup.genesisProtocol.state(proposalId),boostedState);
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-      assert.equal(await threshold(testSetup),thresholdConst);
-
-      //set up another proposal
-      proposalId = await propose(testSetup);
-      //boost it
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-      await stake(testSetup,proposalId,YES,web3.utils.toWei("1600"),accounts[0]);
-      assert.equal(await testSetup.genesisProtocol.state(proposalId),boostedState);
-
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),2);
-      assert.equal(await threshold(testSetup),thresholdConst*thresholdConst);
-
-      //execute
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-      assert.equal(await threshold(testSetup),thresholdConst);
-    });
-
-    it("reputation flow ", async () => {
-      var voterY = accounts[0];
-      var voterN = accounts[1];
-      var proposer = accounts[2];
-      var staker = accounts[2];
-
-
-      var votersReputationLossRatio=20;
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,votersReputationLossRatio,15,10);
-      var totalRepSupply = await testSetup.org.reputation.totalSupply();
-      var proposalId = await propose(testSetup,proposer);
-
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:voterY});
-      await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:voterN});
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-      await testSetup.stakingToken.transfer(staker,500,{from:accounts[0]});
-      var balanceOfVoterY = await testSetup.stakingToken.balanceOf(voterY);
-      await stake(testSetup,proposalId,YES,100,staker);
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,voterY);
-      var redeemToken = redeemRewards[0].toNumber();
-      var redeemReputation = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
-      var repVoterY = testSetup.reputationArray[0];
-      var repVoterN = testSetup.reputationArray[1];
-      var lostReputation = (repVoterN * votersReputationLossRatio)/100;
-      var voterYRepDeposit = (repVoterY * votersReputationLossRatio)/100;
-      assert.equal(redeemReputation,Math.round(voterYRepDeposit + (repVoterY *lostReputation)/ repVoterY));
-      assert.equal(redeemToken,0);
-      var tx = await testSetup.genesisProtocol.redeem(proposalId,voterY);
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "RedeemReputation");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, voterY);
-      assert.equal(tx.logs[0].args._amount, redeemReputation);
-      assert.equal(balanceOfVoterY.eq(await testSetup.stakingToken.balanceOf(voterY)),true);
-      assert.equal(await testSetup.org.reputation.balanceOf(voterY),Math.round(repVoterY+(repVoterY *lostReputation)/ repVoterY));
-      //check rep sum zero
-      assert.equal(totalRepSupply.toNumber(), (await testSetup.org.reputation.totalSupply()).toNumber());
-    });
-
-    it("reputation flow for unsuccessful voting", async () => {
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-      var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-      var totalRep = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
-      var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "RedeemReputation");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
-      //var totalRep =  rep4Stake.toNumber() + rep4Vote.toNumber() + rep4Propose.toNumber();
-      assert.equal(tx.logs[0].args._amount, totalRep);
-      assert.equal(balanceOfAccounts0.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
-      var loss = (10*testSetup.reputationArray[0])/100;  //votersReputationLossRatio
-      assert.equal(await testSetup.org.reputation.balanceOf(accounts[0]),testSetup.reputationArray[0] + totalRep - loss);
-    });
-
-    it("quite window ", async () => {
-      var quietEndingPeriod = 20;
-
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
-
-      var proposalId = await propose(testSetup);
-
-
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[1]});
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-      await stake(testSetup,proposalId,YES,100,accounts[0]);
-      var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[proposalStateIndex],boostedState);//boosted
-
-      await helpers.increaseTime(50); //get into the quite period
-      assert.equal(await threshold(testSetup),2);
-
-      await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:accounts[0]}); //change winning vote
-      assert.equal(await threshold(testSetup),2);
-
-      proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[proposalStateIndex],6);//quietEndingPeriod -still not execute
-      await helpers.increaseTime(15); //increase time
-
-      await testSetup.genesisProtocol.execute(proposalId);
-
-      proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[proposalStateIndex],6);//boosted -still not execute
-      await helpers.increaseTime(10); //increase time
-      const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-
-      await testSetup.genesisProtocol.execute(proposalId);
-
-      assert.equal(await threshold(testSetup),1);
-
-      assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
-
-      proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[proposalStateIndex],2);//executed
-    });
-
-    it("quite window with tie ", async () => {
-      var quietEndingPeriod = 20;
-
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
-
-      var proposalId = await propose(testSetup);
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[1]});
-      await stake(testSetup,proposalId,YES,100,accounts[0]);
-      await helpers.increaseTime(50); //get into the quite period
-      var yesVotes = await testSetup.genesisProtocol.voteStatus(proposalId,YES);
-      await testSetup.genesisProtocol.vote(proposalId,NO,yesVotes,helpers.NULL_ADDRESS,{from:accounts[2]}); //change winning vote by create a tie.
-      await helpers.increaseTime(15); //increase time
-      await testSetup.genesisProtocol.execute(proposalId);
-      var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[proposalStateIndex],6);//boosted -still not execute
-      await helpers.increaseTime(10); //increase time
-      await testSetup.genesisProtocol.execute(proposalId);
-      proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[proposalStateIndex],2);//executed
-      assert.equal(await testSetup.genesisProtocol.winningVote(proposalId),NO);
-    });
-
-    it("scoreThresholdParams and getProposalOrganization", async () => {
-
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,10,15,10);
-
-      var proposalId = await propose(testSetup);
-      const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-      assert.equal(await testSetup.genesisProtocol.getProposalOrganization(proposalId),organizationId);
-    });
-
-    it('getAllowedRangeOfChoices', async function () {
-      var testSetup = await setup(accounts);
-      let allowedRange = await testSetup.genesisProtocol.getAllowedRangeOfChoices();
-
-      assert.equal(allowedRange[0],1);
-      assert.equal(allowedRange[1],2);
-    });
-
-    it("redeem dao bounty", async () => {
-
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-      await stake(testSetup,proposalId,YES,100,accounts[0]);
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      var redeemRewards = await testSetup.genesisProtocol.redeemDaoBounty.call(proposalId,accounts[0]);
-      var stakerRedeemAmountBaunty = redeemRewards[0];
-      var potentialAmount = redeemRewards[1];
-      var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(potentialAmount.eq(proposalInfo[8]),true);
-      //'there is no tokens on the dao for bounty'
-      assert.equal(stakerRedeemAmountBaunty,0);
-      //send tokens to org avatar
-      var tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
-      assert.equal(tx.logs.length,0); //not enough funds
-      await testSetup.stakingToken.transfer(testSetup.genesisProtocolCallbacks.address,potentialAmount);
-      var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
-      tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
-      assert.equal(tx.logs.length,1);
-      assert.equal(tx.logs[0].event, "RedeemDaoBounty");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
-      assert.equal(tx.logs[0].args._amount, potentialAmount.toNumber());
-      var bafter = await testSetup.stakingToken.balanceOf(accounts[0]);
-      assert.equal(bafter.sub(balanceOfAccounts0) ,15);
-      tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
-      assert.equal(tx.logs.length,0);
-
-    });
-
-    it("redeem dao bounty for unsuccessful proposal", async () => {
-
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-      await stake(testSetup,proposalId,NO,100,accounts[0]);
-      await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:accounts[2]});
-      var redeemRewards = await testSetup.genesisProtocol.redeemDaoBounty.call(proposalId,accounts[0]);
-      var stakerRedeemAmountBaunty = redeemRewards[0];
-      assert.equal(stakerRedeemAmountBaunty,0);
-      var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
-
-      //send tokens to org avatar
-      var tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
-      assert.equal(tx.logs.length,0);
-      assert.equal(balanceOfAccounts0.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
-
-    });
-
-    it("vote on behalf ", async function() {
-      var voteOnBehalf = accounts[1];
-      var testSetup = await setup(accounts,voteOnBehalf);
-      const proposalId = await propose(testSetup);
-      try {
-        await testSetup.genesisProtocol.vote(proposalId, 1,0,accounts[2],{from:accounts[0]});
-        assert(false, 'can vote only from voteOnBehalf address');
-      } catch (ex) {
-        helpers.assertVMException(ex);
-      }
-
-      let voteTX = await testSetup.genesisProtocol.vote(proposalId, 1,0,accounts[2],{from:voteOnBehalf});
-
-      assert.equal(voteTX.logs.length, 4);
-      assert.equal(voteTX.logs[0].event, "VoteProposal");
-      assert.equal(voteTX.logs[0].args._proposalId, proposalId);
-      assert.equal(voteTX.logs[0].args._voter, accounts[2]);
-      assert.equal(voteTX.logs[0].args._vote, 1);
-      assert.equal(voteTX.logs[0].args._reputation, testSetup.reputationArray[2]);
-    });
-
-    it("quite window double toggling direction", async () => {
-    var quietEndingPeriod = 60;
-
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
-
-    var proposalId = await propose(testSetup);
-    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-
-    //boost proposal
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);//boosted
-    //vote YES to get in quite window period
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[0]}); //change winning vote
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],6);//quiteEndperiod
-    await helpers.increaseTime(10); //increase time
-    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-    //vote NO to toggle direction again and extend the quite end period
-    await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:accounts[2]}); //change winning vote and execute
-    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
-    //increase time after the proposal expiration
-    await helpers.increaseTime(61); //increase time
-    assert.equal(await threshold(testSetup),1);
-
-  });
-
-  it("set organization ", async () => {
-      var testSetup = await setup(accounts);
-      var tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,helpers.NULL_ADDRESS,accounts[1]);
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "NewProposal");
-      assert.equal(tx.logs[0].args._organization,accounts[1]);
-      var proposalId = await getValueFromLogs(tx, '_proposalId');
-      var proposal = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[0],accounts[1]));
-
-
-      tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,helpers.NULL_ADDRESS,accounts[1],{from : accounts[1]});
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "NewProposal");
-      assert.equal(tx.logs[0].args._organization,accounts[1]);
-      proposalId = await getValueFromLogs(tx, '_proposalId');
-      proposal = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[1],accounts[1]));
-  });
-
-  it("organization can redeem its winning stakes ", async () => {
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-
-
-      await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS);
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-
-      await stake(testSetup,proposalId,YES,100,accounts[1]);
-      await helpers.increaseTime(61);
-
-      await testSetup.genesisProtocol.execute(proposalId);
-      var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[8],15);
-
-      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,testSetup.genesisProtocolCallbacks.address);
-      var redeemToken = redeemRewards[0].toNumber();
-      //assert.equal(redeemToken,100);
-      var tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
-      proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[9],15);
-      assert.equal(tx.logs.length,1);
-      assert.equal(tx.logs[0].event, "Redeem");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, testSetup.genesisProtocolCallbacks.address);
-      assert.equal(tx.logs[0].args._amount, redeemToken);
-  });
-
-
-  it("prepare for boost  ", async () => {
-
-    var preBoostedVotePeriodLimit = 60;
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
-    var proposalId = await propose(testSetup);
-
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-
-    await helpers.increaseTime(preBoostedVotePeriodLimit+1);
-    await testSetup.genesisProtocol.execute(proposalId);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-
-  });
-
-  it("from prepare for boost back to que", async () => {
-
-    var preBoostedVotePeriodLimit = 60;
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
-    var proposalId = await propose(testSetup);
-
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-    assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
-    await stake(testSetup,proposalId,NO,200,accounts[1]); //downstake ...
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],3);   //state back to q
-
-  });
-  it("prepare for boost check high from the minimum threshold", async () => {
-
-    var preBoostedVotePeriodLimit = 60;
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,600,60,preBoostedVotePeriodLimit,3000);
-    var proposalId = await propose(testSetup);
-    var proposalId2 = await propose(testSetup);//boost a proposal
-    await testSetup.genesisProtocol.vote(proposalId2,YES,0,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId2,YES,web3.utils.toWei("1500"),accounts[0]);
-    await helpers.increaseTime(preBoostedVotePeriodLimit+1);
-    await testSetup.genesisProtocol.execute(proposalId2);
-    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-    assert.equal(await threshold(testSetup),3);
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
-
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-    assert.equal(proposalInfo[10],3*Math.pow(2,REAL_FBITS));//check proposal own threshold
-
-    assert.equal(await score(testSetup,proposalId),(100/15).toFixed(2));
-    assert.equal(await threshold(testSetup),3);
-    //now decrease threshold
-    await testSetup.genesisProtocol.vote(proposalId2,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
-    assert.equal(await threshold(testSetup),1);
-    var tx = await stake(testSetup,proposalId,NO,35,accounts[1],"ConfidenceLevelChange"); //downstake 35 to make score =2.
-    assert.equal(tx[0].event, "ConfidenceLevelChange");
-    assert.equal(tx[0].args._proposalId, proposalId);
-    assert.equal(tx[0].args._confidenceThreshold, Math.pow(2,REAL_FBITS));
-
-    assert.equal(await score(testSetup,proposalId),2);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //no change is state
-  });
-
-
-  it("prepare for boost and boost with a new threshold  ", async () => {
-
-    var preBoostedVotePeriodLimit = 60;
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
-    var proposalId = await propose(testSetup);
-
-    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-
-    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId,YES,30,accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],30+15); //totalStakes
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-
-    //boost another proposal
-    var proposalId2 = await propose(testSetup);
-    await testSetup.genesisProtocol.vote(proposalId2,YES,0,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId2,YES,web3.utils.toWei("1500"),accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId2);
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-    await helpers.increaseTime(preBoostedVotePeriodLimit*2);
-    await testSetup.genesisProtocol.execute(proposalId2);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId2);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
-
-    //proposalId2 is now boosted
-    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
-    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
-    //try to execute proposalId
-    await testSetup.genesisProtocol.execute(proposalId);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //still preBoosted
-
-    assert.equal(await threshold(testSetup),2);
-
-    var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    assert.equal(proposalStatus[2],30);
-    assert.equal(proposalStatus[3],15);
-
-    await stake(testSetup,proposalId,YES,web3.utils.toWei("3000"),accounts[0]);
-    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalStateIndex],boostedState);   //now it is boosted
-
-  });
+  // it('Proposal with wrong num of options', async function () {
+  //     var testSetup = await setup(accounts);
+  //
+  //   // 3 options - max is 2 - exception should be raised
+  //   try {
+  //     await testSetup.genesisProtocolCallbacks.propose(3, helpers.NULL_HASH, testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
+  //     assert(false, 'Tried to create a proposal with 3 options - max is 2');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  //   // -5 options - exception should be raised
+  //   try {
+  //     await testSetup.genesisProtocolCallbacks.propose(-5, helpers.NULL_HASH, testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
+  //     assert(false, 'Tried to create an absolute vote with negative number of options');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  //   // 0 options - exception should be raised
+  //   try {
+  //     await testSetup.genesisProtocolCallbacks.propose(0, helpers.NULL_HASH ,testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
+  //     assert(false, 'Tried to create an absolute vote with 0 number of options');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  // });
+  //
+  // it('Test voteWithSpecifiedAmounts - More reputation than I own, negative reputation, etc..', async function () {
+  //     var testSetup = await setup(accounts);
+  //
+  //     var proposalId = await propose(testSetup);
+  //
+  //
+  //   // Vote with the reputation the I own - should work
+  //   let tx = await testSetup.genesisProtocol.vote(proposalId, 1, testSetup.reputationArray[0] / 10, helpers.NULL_ADDRESS);
+  //
+  //   var repVoted = await helpers.getValueFromLogs(tx, "_reputation");
+  //
+  //   assert.equal(repVoted, testSetup.reputationArray[0] / 10, 'Should vote with specified amount');
+  //
+  //   // Vote with more reputation that i own - exception should be raised
+  //   try {
+  //     await testSetup.genesisProtocol.vote(proposalId, 1, (testSetup.reputationArray[1] + 1), helpers.NULL_ADDRESS,{from:accounts[1]});
+  //     assert(false, 'Not enough reputation - voting shouldn\'t work');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  //   // Vote with a very big number - exception should be raised
+  //
+  //   let bigNum = ((new BigNumber(2)).toPower(254)).toString(10);
+  //   try {
+  //     await testSetup.genesisProtocol.vote(proposalId, 1, bigNum, helpers.NULL_ADDRESS);
+  //     assert(false, 'Voting shouldn\'t work');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  // });
+  //
+  // it("Internal functions can not be called externally", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   // Lets try to call internalVote function
+  //   try {
+  //     await testSetup.genesisProtocol.internalVote(proposalId, accounts[0], 1, testSetup.reputationArray[0]);
+  //     assert(false, 'Can\'t call internalVote');
+  //   } catch (ex) {
+  //     helpers.assertInternalFunctionException(ex);
+  //   }
+  // });
+  //
+  // it("Try to send wrong proposal id to the voting/cancel functions", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   await propose(testSetup);
+  //
+  //
+  //   // Lets try to call vote with invalid proposal id
+  //   try {
+  //     await testSetup.genesisProtocol.vote(helpers.NULL_HASH, 1,0,helpers.NULL_ADDRESS, {from: accounts[0]});
+  //     assert(false, 'Invalid proposal ID has been delivered');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  //   // Lets try to call voteWithSpecifiedAmounts with invalid proposal id
+  //   try {
+  //     await testSetup.genesisProtocol.vote(helpers.NULL_HASH, 1, 1,helpers.NULL_ADDRESS);
+  //     assert(false, 'Invalid proposal ID has been delivered');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  //   // Lets try to call execute with invalid proposal id
+  //   try {
+  //     await testSetup.genesisProtocol.execute(helpers.NULL_HASH);
+  //     assert(false, 'Invalid proposal ID has been delivered');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  // });
+  //
+  // it("stake with approveAndCall log", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //   var tx = await stake(testSetup,proposalId,1,10,accounts[0]);
+  //
+  //   assert.equal(tx.length, 1);
+  //   assert.equal(tx[0].event, "Stake");
+  //   assert.equal(tx[0].args._staker, accounts[0]);
+  //   assert.equal(tx[0].args._vote, 1);
+  //   assert.equal(tx[0].args._amount, 10);
+  // });
+  //
+  //
+  // it("stake more than allowed.", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //   var proposalStatus  = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   let maxTotalStakeAllowed = ((new BigNumber(2)).toPower(128));
+  //   let maxTotalStakesRemain = maxTotalStakeAllowed.sub(proposalStatus[3]);
+  //
+  //   try {
+  //       await stake(testSetup,proposalId,1,maxTotalStakesRemain.add(1).toString(10),accounts[0]);
+  //       assert(false, 'stake more than allowed should revert');
+  //     } catch (ex) {
+  //       helpers.assertVMException(ex);
+  //     }
+  //
+  //   var tx = await stake(testSetup,proposalId,1,maxTotalStakesRemain.toString(10),accounts[0]);
+  //   assert.equal(tx.length, 1);
+  //   assert.equal(tx[0].event, "Stake");
+  //   assert.equal(tx[0].args._staker, accounts[0]);
+  //   assert.equal(tx[0].args._vote, 1);
+  //   assert.equal(tx[0].args._amount, maxTotalStakesRemain.toString(10));
+  // });
+  //
+  // it("stake log", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //   await testSetup.stakingToken.approve(testSetup.genesisProtocol.address,10);
+  //
+  //   var tx = await testSetup.genesisProtocol.stake(proposalId,1,10);
+  //   assert.equal(tx.logs.length, 1);
+  //   assert.equal(tx.logs[0].event, "Stake");
+  //   assert.equal(tx.logs[0].args._staker, accounts[0]);
+  //   assert.equal(tx.logs[0].args._vote, 1);
+  //   assert.equal(tx.logs[0].args._amount, 10);
+  // });
+  //
+  // it("check nonce ", async () => {
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
+  //   var proposalId = await propose(testSetup);
+  //
+  //   let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],0);
+  //   assert.equal(staker[1],0);
+  //
+  //   var tx = await stake(testSetup,proposalId,1,10,accounts[0]);
+  //   assert.equal(tx.length, 1);
+  //   assert.equal(tx[0].event, "Stake");
+  //   assert.equal(tx[0].args._staker, accounts[0]);
+  //   assert.equal(tx[0].args._vote, 1);
+  //   assert.equal(tx[0].args._amount, 10);
+  //   staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],1);
+  //   assert.equal(staker[1],10);
+  //   var nonce =  await testSetup.genesisProtocol.stakesNonce(accounts[0]);
+  //   nonce--;
+  //
+  //   var textMsg = "0x"+ethereumjs.soliditySHA3(
+  //       ["address","bytes32","uint", "uint","uint"],
+  //       [testSetup.genesisProtocol.address, proposalId,1,10, nonce.toString()]
+  //     ).toString("hex");
+  //   const signature = await web3.eth.sign(textMsg ,accounts[0]);
+  //   const encodeABI = await new web3.eth.Contract(testSetup.genesisProtocol.abi).methods.stakeWithSignature(proposalId,1,10,nonce.toString(),signatureType,signature).encodeABI();
+  //   try {
+  //    await testSetup.stakingToken.approveAndCall(
+  //       testSetup.genesisProtocol.address, 10, encodeABI ,{from : accounts[0]}
+  //     );
+  //     assert(false, 'stake should fail with the same nonce');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  // });
+  //
+  // it("check stake with wrong signature ", async () => {
+  //
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //   let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],0);
+  //   assert.equal(staker[1],0);
+  //   var nonce =  (await testSetup.genesisProtocol.stakesNonce(accounts[0])).toString();
+  //   var textMsg = "0x"+ethereumjs.soliditySHA3(
+  //       ["address","bytes32","uint", "uint","uint"],
+  //       [testSetup.genesisProtocol.address, proposalId,1,10, nonce]
+  //     ).toString("hex");
+  //   const signature = await web3.eth.sign(textMsg , accounts[0]);
+  //   proposalId = "0x1234"; //change proposalId
+  //   const encodeABI = await new web3.eth.Contract(testSetup.genesisProtocol.abi).methods.stakeWithSignature(proposalId,1,10,nonce,signatureType,signature).encodeABI();
+  //   try {
+  //    await testSetup.stakingToken.approveAndCall(
+  //       testSetup.genesisProtocol.address, 10, encodeABI ,{from : accounts[0]}
+  //     );
+  //     assert(false, 'stake should fail due to wrong signature');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  // });
+  //
+  //
+  // it("multiple stakes ", async () => {
+  //
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   let staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],0);
+  //   assert.equal(staker[1],0);
+  //
+  //   var tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
+  //   assert.equal(tx[0].event, "Stake");
+  //   assert.equal(tx[0].args._staker, accounts[0]);
+  //   assert.equal(tx[0].args._vote, 1);
+  //   assert.equal(tx[0].args._amount, 10);
+  //   staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],1);
+  //   assert.equal(staker[1],10);
+  //
+  //   //add more stake on the same vote
+  //   tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
+  //   assert.equal(tx[0].event, "Stake");
+  //   assert.equal(tx[0].args._staker, accounts[0]);
+  //   assert.equal(tx[0].args._vote, 1);
+  //   assert.equal(tx[0].args._amount, 10);
+  //   staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],1);
+  //   assert.equal(staker[1],20);
+  //   //try to stake with different vote as before
+  //   tx = await stake(testSetup,proposalId,2,10,accounts[0]);
+  //   staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
+  //   assert.equal(staker[0],1);
+  //   assert.equal(staker[1],20);
+  //
+  //   let proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[9],20+15); //totalStakes + dao downstake
+  // });
+  //
+  // it("stake without approval - fail", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //     try {
+  //       await testSetup.genesisProtocol.stake(proposalId,2,10);
+  //       assert(false, 'stake without approval should revert');
+  //     } catch (ex) {
+  //       helpers.assertVMException(ex);
+  //     }
+  // });
+  //
+  //
+  // it("stake with zero amount will fail", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   try {
+  //     await stake(testSetup,proposalId,1,0,accounts[0]);
+  //     assert(false, 'stake with zero amount should revert');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  // });
+  //
+  // it("stake on boosted proposal is not allowed", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //   var proposalId = await propose(testSetup);
+  //   //shift proposal to boosted phase
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],3);
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);  //state boosted
+  //   //S = (S+) /(S-)
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   var score = proposalStatus[2]/proposalStatus[3];
+  //   assert.equal(score,100/15);
+  //   //try to stake on boosted proposal should fail
+  //   var tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
+  //   assert.equal(tx.length, 0);
+  // });
+  //
+  // it("boost proposal", async () => {
+  //   var thresholdConst = 1700; //1.7
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConst,0,60,10,2);
+  //   var proposalId = await propose(testSetup);
+  //   //shift proposal to boosted phase
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],3);
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   await stake(testSetup,proposalId,YES,30,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],30+2); //totalStakes
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);  //state boosted
+  //   //S = (S+) /(S-)
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   var score = proposalStatus[2]/proposalStatus[3];
+  //   assert.equal(score,30/2);
+  //   //try to boost another proposal - score(confidence) should be higher than 1.7
+  //   proposalId = await propose(testSetup);
+  //   proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   assert.equal(proposalStatus[3].toNumber(),20);
+  //   await stake(testSetup,proposalId,YES,34,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   //not boosted yet because 34/20 = 1.7
+  //   assert.equal(proposalInfo[proposalStateIndex],3);
+  //   // upstake with 1 should be enough to boost
+  //   await stake(testSetup,proposalId,YES,1,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   assert.equal(proposalStatus[3].toNumber(),20);
+  //   assert.equal(proposalStatus[2].toNumber(),35);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);
+  // });
+  //
+  // it("stake on boosted dual proposal is not allowed", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   //shift proposal to boosted phase
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],3);
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //
+  //   //S* POW(R/totalR)
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   var score = proposalStatus[2]/proposalStatus[3];
+  //   assert.equal(score,100/15);
+  //
+  //   //try to stake on boosted proposal should fail
+  //   var tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
+  //   assert.equal(tx.length, 0);
+  // });
+  //
+  // it("shouldBoost ", async () => {
+  //   var testSetup = await setup(accounts);
+  //   var proposalId = await propose(testSetup);
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   var score = proposalStatus[2]/proposalStatus[3];
+  //   assert.equal(score,0);
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),true);
+  //   proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   score = proposalStatus[2]/proposalStatus[3];
+  //   assert.equal(score,100/15);
+  //
+  // });
+  //
+  // it("average boosted downstake ", async () => {
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //   const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //   assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
+  //
+  //   //BOOST another proposal
+  //   proposalId = await propose(testSetup);
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   assert.equal(proposalStatus[3],150);//downstake
+  //   await stake(testSetup,proposalId,YES,web3.utils.toWei("3000"),accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //   assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),Math.floor((15+150)/2));
+  //   //expiere proposal by getting absolute majority
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
+  //   assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //   assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),Math.floor((82*2-150)/1));
+  //
+  // });
+  //
+  // it("average boosted downstake with booster proposal == 0 ", async () => {
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   var score = proposalStatus[2]/proposalStatus[3];
+  //   assert.equal(score,0);
+  //
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //   const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //   assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
+  //
+  //   //expiere proposal by getting absolute majority
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
+  //   assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),0);
+  // });
+  //
+  //
+  // it("stake on none votable phase should revert ", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //   await testSetup.stakingToken.approve(testSetup.genesisProtocol.address,10);
+  //   //vote with majority. state is executed
+  //   await testSetup.genesisProtocol.vote(proposalId, 1,0,helpers.NULL_ADDRESS, { from: accounts[2] });
+  //
+  //   try {
+  //     await stake(testSetup,proposalId,1,0,accounts[0]);
+  //     assert(false, 'stake on executed phase should revert');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  //
+  // });
+  //
+  // it("redeem ", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   var accounts0Balance = await testSetup.stakingToken.balanceOf(accounts[0]);
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //   await helpers.increaseTime(61);
+  //   await testSetup.genesisProtocol.execute(proposalId);
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[8],15);
+  //   var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
+  //   var redeemToken = redeemRewards[0].toNumber();
+  //   assert.equal(redeemToken,((100+15-15)*100)/100);
+  //   assert.equal(await testSetup.stakingToken.balanceOf(accounts[0]),accounts0Balance-100);
+  //   assert.equal(proposalInfo[9],100+15);
+  //   var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[9],15);
+  //   assert.equal(tx.logs.length,2);
+  //   assert.equal(tx.logs[0].event, "Redeem");
+  //   assert.equal(tx.logs[0].args._proposalId, proposalId);
+  //   assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
+  //   assert.equal(tx.logs[0].args._amount, redeemToken);
+  //   assert.equal(accounts0Balance.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
+  // });
+  //
+  // it("redeem without execution should revert", async () => {
+  //
+  //   var testSetup = await setup(accounts);
+  //
+  //   var proposalId = await propose(testSetup);
+  //
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //   assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //   await testSetup.genesisProtocol.execute(proposalId);
+  //   try {
+  //     await  testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
+  //     assert(false, 'redeem before execution should revert');
+  //   } catch (ex) {
+  //     helpers.assertVMException(ex);
+  //   }
+  // });
+  //
+  //   it("dynamic threshold ", async () => {
+  //     var testSetup = await setup(accounts);
+  //
+  //     var thresholdConst = 2000/1000;
+  //
+  //
+  //     var proposalId = await propose(testSetup);
+  //     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //
+  //     assert.equal(await threshold(testSetup),1);
+  //
+  //     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
+  //
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //     await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //     assert.equal(await testSetup.genesisProtocol.state(proposalId),boostedState);
+  //     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //     assert.equal(await threshold(testSetup),thresholdConst);
+  //
+  //     //set up another proposal
+  //     proposalId = await propose(testSetup);
+  //     //boost it
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //     await stake(testSetup,proposalId,YES,web3.utils.toWei("1600"),accounts[0]);
+  //     assert.equal(await testSetup.genesisProtocol.state(proposalId),boostedState);
+  //
+  //     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),2);
+  //     assert.equal(await threshold(testSetup),thresholdConst*thresholdConst);
+  //
+  //     //execute
+  //     await helpers.increaseTime(61);
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //     assert.equal(await threshold(testSetup),thresholdConst);
+  //   });
+  //
+  //   it("reputation flow ", async () => {
+  //     var voterY = accounts[0];
+  //     var voterN = accounts[1];
+  //     var proposer = accounts[2];
+  //     var staker = accounts[2];
+  //
+  //
+  //     var votersReputationLossRatio=20;
+  //     var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,votersReputationLossRatio,15,10);
+  //     var totalRepSupply = await testSetup.org.reputation.totalSupply();
+  //     var proposalId = await propose(testSetup,proposer);
+  //
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:voterY});
+  //     await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:voterN});
+  //     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //     await testSetup.stakingToken.transfer(staker,500,{from:accounts[0]});
+  //     var balanceOfVoterY = await testSetup.stakingToken.balanceOf(voterY);
+  //     await stake(testSetup,proposalId,YES,100,staker);
+  //     await helpers.increaseTime(61);
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,voterY);
+  //     var redeemToken = redeemRewards[0].toNumber();
+  //     var redeemReputation = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
+  //     var repVoterY = testSetup.reputationArray[0];
+  //     var repVoterN = testSetup.reputationArray[1];
+  //     var lostReputation = (repVoterN * votersReputationLossRatio)/100;
+  //     var voterYRepDeposit = (repVoterY * votersReputationLossRatio)/100;
+  //     assert.equal(redeemReputation,Math.round(voterYRepDeposit + (repVoterY *lostReputation)/ repVoterY));
+  //     assert.equal(redeemToken,0);
+  //     var tx = await testSetup.genesisProtocol.redeem(proposalId,voterY);
+  //     assert.equal(tx.logs.length, 1);
+  //     assert.equal(tx.logs[0].event, "RedeemReputation");
+  //     assert.equal(tx.logs[0].args._proposalId, proposalId);
+  //     assert.equal(tx.logs[0].args._beneficiary, voterY);
+  //     assert.equal(tx.logs[0].args._amount, redeemReputation);
+  //     assert.equal(balanceOfVoterY.eq(await testSetup.stakingToken.balanceOf(voterY)),true);
+  //     assert.equal(await testSetup.org.reputation.balanceOf(voterY),Math.round(repVoterY+(repVoterY *lostReputation)/ repVoterY));
+  //     //check rep sum zero
+  //     assert.equal(totalRepSupply.toNumber(), (await testSetup.org.reputation.totalSupply()).toNumber());
+  //   });
+  //
+  //   it("reputation flow for unsuccessful voting", async () => {
+  //     var testSetup = await setup(accounts);
+  //
+  //     var proposalId = await propose(testSetup);
+  //
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //     var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
+  //     await helpers.increaseTime(61);
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
+  //     var totalRep = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
+  //     var tx = await testSetup.genesisProtocol.proposalId,accounts[0]);
+  //     assert.equal(tx.logs.length, 1);
+  //     assert.equal(tx.logs[0].event, "RedeemReputation");
+  //     assert.equal(tx.logs[0].args._proposalId, proposalId);
+  //     assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
+  //     //var totalRep =  rep4Stake.toNumber() + rep4Vote.toNumber() + rep4Propose.toNumber();
+  //     assert.equal(tx.logs[0].args._amount, totalRep);
+  //     assert.equal(balanceOfAccounts0.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
+  //     var loss = (10*testSetup.reputationArray[0])/100;  //votersReputationLossRatio
+  //     assert.equal(await testSetup.org.reputation.balanceOf(accounts[0]),testSetup.reputationArray[0] + totalRep - loss);
+  //   });
+  //
+  //   it("quite window ", async () => {
+  //     var quietEndingPeriod = 20;
+  //
+  //     var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
+  //
+  //     var proposalId = await propose(testSetup);
+  //
+  //
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[1]});
+  //     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //     await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[proposalStateIndex],boostedState);//boosted
+  //
+  //     await helpers.increaseTime(50); //get into the quite period
+  //     assert.equal(await threshold(testSetup),2);
+  //
+  //     await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:accounts[0]}); //change winning vote
+  //     assert.equal(await threshold(testSetup),2);
+  //
+  //     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[proposalStateIndex],6);//quietEndingPeriod -still not execute
+  //     await helpers.increaseTime(15); //increase time
+  //
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //
+  //     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[proposalStateIndex],6);//boosted -still not execute
+  //     await helpers.increaseTime(10); //increase time
+  //     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //
+  //     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //
+  //     assert.equal(await threshold(testSetup),1);
+  //
+  //     assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
+  //
+  //     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[proposalStateIndex],2);//executed
+  //   });
+  //
+  //   it("quite window with tie ", async () => {
+  //     var quietEndingPeriod = 20;
+  //
+  //     var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
+  //
+  //     var proposalId = await propose(testSetup);
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[1]});
+  //     await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //     await helpers.increaseTime(50); //get into the quite period
+  //     var yesVotes = await testSetup.genesisProtocol.voteStatus(proposalId,YES);
+  //     await testSetup.genesisProtocol.vote(proposalId,NO,yesVotes,helpers.NULL_ADDRESS,{from:accounts[2]}); //change winning vote by create a tie.
+  //     await helpers.increaseTime(15); //increase time
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[proposalStateIndex],6);//boosted -still not execute
+  //     await helpers.increaseTime(10); //increase time
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[proposalStateIndex],2);//executed
+  //     assert.equal(await testSetup.genesisProtocol.winningVote(proposalId),NO);
+  //   });
+  //
+  //   it("scoreThresholdParams and getProposalOrganization", async () => {
+  //
+  //     var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,10,15,10);
+  //
+  //     var proposalId = await propose(testSetup);
+  //     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //     assert.equal(await testSetup.genesisProtocol.getProposalOrganization(proposalId),organizationId);
+  //   });
+  //
+  //   it('getAllowedRangeOfChoices', async function () {
+  //     var testSetup = await setup(accounts);
+  //     let allowedRange = await testSetup.genesisProtocol.getAllowedRangeOfChoices();
+  //
+  //     assert.equal(allowedRange[0],1);
+  //     assert.equal(allowedRange[1],2);
+  //   });
+  //
+  //   it("redeem dao bounty", async () => {
+  //
+  //     var testSetup = await setup(accounts);
+  //
+  //     var proposalId = await propose(testSetup);
+  //     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //     await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //     await helpers.increaseTime(61);
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     var redeemRewards = await testSetup.genesisProtocol.redeemDaoBounty.call(proposalId,accounts[0]);
+  //     var stakerRedeemAmountBaunty = redeemRewards[0];
+  //     var potentialAmount = redeemRewards[1];
+  //     var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(potentialAmount.eq(proposalInfo[8]),true);
+  //     //'there is no tokens on the dao for bounty'
+  //     assert.equal(stakerRedeemAmountBaunty,0);
+  //     //send tokens to org avatar
+  //     var tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
+  //     assert.equal(tx.logs.length,0); //not enough funds
+  //     await testSetup.stakingToken.transfer(testSetup.genesisProtocolCallbacks.address,potentialAmount);
+  //     var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
+  //     tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
+  //     assert.equal(tx.logs.length,1);
+  //     assert.equal(tx.logs[0].event, "RedeemDaoBounty");
+  //     assert.equal(tx.logs[0].args._proposalId, proposalId);
+  //     assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
+  //     assert.equal(tx.logs[0].args._amount, potentialAmount.toNumber());
+  //     var bafter = await testSetup.stakingToken.balanceOf(accounts[0]);
+  //     assert.equal(bafter.sub(balanceOfAccounts0) ,15);
+  //     tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
+  //     assert.equal(tx.logs.length,0);
+  //
+  //   });
+  //
+  //   it("redeem dao bounty for unsuccessful proposal", async () => {
+  //
+  //     var testSetup = await setup(accounts);
+  //
+  //     var proposalId = await propose(testSetup);
+  //     await stake(testSetup,proposalId,NO,100,accounts[0]);
+  //     await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:accounts[2]});
+  //     var redeemRewards = await testSetup.genesisProtocol.redeemDaoBounty.call(proposalId,accounts[0]);
+  //     var stakerRedeemAmountBaunty = redeemRewards[0];
+  //     assert.equal(stakerRedeemAmountBaunty,0);
+  //     var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
+  //
+  //     //send tokens to org avatar
+  //     var tx = await testSetup.genesisProtocol.redeemDaoBounty(proposalId,accounts[0]);
+  //     assert.equal(tx.logs.length,0);
+  //     assert.equal(balanceOfAccounts0.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
+  //
+  //   });
+  //
+  //   it("vote on behalf ", async function() {
+  //     var voteOnBehalf = accounts[1];
+  //     var testSetup = await setup(accounts,voteOnBehalf);
+  //     const proposalId = await propose(testSetup);
+  //     try {
+  //       await testSetup.genesisProtocol.vote(proposalId, 1,0,accounts[2],{from:accounts[0]});
+  //       assert(false, 'can vote only from voteOnBehalf address');
+  //     } catch (ex) {
+  //       helpers.assertVMException(ex);
+  //     }
+  //
+  //     let voteTX = await testSetup.genesisProtocol.vote(proposalId, 1,0,accounts[2],{from:voteOnBehalf});
+  //
+  //     assert.equal(voteTX.logs.length, 4);
+  //     assert.equal(voteTX.logs[0].event, "VoteProposal");
+  //     assert.equal(voteTX.logs[0].args._proposalId, proposalId);
+  //     assert.equal(voteTX.logs[0].args._voter, accounts[2]);
+  //     assert.equal(voteTX.logs[0].args._vote, 1);
+  //     assert.equal(voteTX.logs[0].args._reputation, testSetup.reputationArray[2]);
+  //   });
+  //
+  //   it("quite window double toggling direction", async () => {
+  //   var quietEndingPeriod = 60;
+  //
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,quietEndingPeriod,60,10,15,10);
+  //
+  //   var proposalId = await propose(testSetup);
+  //   const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //
+  //   //boost proposal
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);//boosted
+  //   //vote YES to get in quite window period
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[0]}); //change winning vote
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],6);//quiteEndperiod
+  //   await helpers.increaseTime(10); //increase time
+  //   assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //   //vote NO to toggle direction again and extend the quite end period
+  //   await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:accounts[2]}); //change winning vote and execute
+  //   assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),0);
+  //   //increase time after the proposal expiration
+  //   await helpers.increaseTime(61); //increase time
+  //   assert.equal(await threshold(testSetup),1);
+  //
+  // });
+  //
+  // it("set organization ", async () => {
+  //     var testSetup = await setup(accounts);
+  //     var tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,helpers.NULL_ADDRESS,accounts[1]);
+  //     assert.equal(tx.logs.length, 1);
+  //     assert.equal(tx.logs[0].event, "NewProposal");
+  //     assert.equal(tx.logs[0].args._organization,accounts[1]);
+  //     var proposalId = await getValueFromLogs(tx, '_proposalId');
+  //     var proposal = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[0],accounts[1]));
+  //
+  //
+  //     tx = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,helpers.NULL_ADDRESS,accounts[1],{from : accounts[1]});
+  //     assert.equal(tx.logs.length, 1);
+  //     assert.equal(tx.logs[0].event, "NewProposal");
+  //     assert.equal(tx.logs[0].args._organization,accounts[1]);
+  //     proposalId = await getValueFromLogs(tx, '_proposalId');
+  //     proposal = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[1],accounts[1]));
+  // });
+  //
+  // it("organization can redeem its winning stakes ", async () => {
+  //     var testSetup = await setup(accounts);
+  //
+  //     var proposalId = await propose(testSetup);
+  //
+  //
+  //     await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS);
+  //     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+  //
+  //     await stake(testSetup,proposalId,YES,100,accounts[1]);
+  //     await helpers.increaseTime(61);
+  //
+  //     await testSetup.genesisProtocol.execute(proposalId);
+  //     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[8],15);
+  //
+  //     var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,testSetup.genesisProtocolCallbacks.address);
+  //     var redeemToken = redeemRewards[0].toNumber();
+  //     //assert.equal(redeemToken,100);
+  //     var tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
+  //     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //     assert.equal(proposalInfo[9],15);
+  //     assert.equal(tx.logs.length,1);
+  //     assert.equal(tx.logs[0].event, "Redeem");
+  //     assert.equal(tx.logs[0].args._proposalId, proposalId);
+  //     assert.equal(tx.logs[0].args._beneficiary, testSetup.genesisProtocolCallbacks.address);
+  //     assert.equal(tx.logs[0].args._amount, redeemToken);
+  // });
+  //
+  //
+  // it("prepare for boost  ", async () => {
+  //
+  //   var preBoostedVotePeriodLimit = 60;
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
+  //   var proposalId = await propose(testSetup);
+  //
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+  //
+  //   await helpers.increaseTime(preBoostedVotePeriodLimit+1);
+  //   await testSetup.genesisProtocol.execute(proposalId);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //
+  // });
+  //
+  // it("from prepare for boost back to que", async () => {
+  //
+  //   var preBoostedVotePeriodLimit = 60;
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
+  //   var proposalId = await propose(testSetup);
+  //
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+  //   assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
+  //   await stake(testSetup,proposalId,NO,200,accounts[1]); //downstake ...
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],3);   //state back to q
+  //
+  // });
+  // it("prepare for boost check high from the minimum threshold", async () => {
+  //
+  //   var preBoostedVotePeriodLimit = 60;
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,600,60,preBoostedVotePeriodLimit,3000);
+  //   var proposalId = await propose(testSetup);
+  //   var proposalId2 = await propose(testSetup);//boost a proposal
+  //   await testSetup.genesisProtocol.vote(proposalId2,YES,0,helpers.NULL_ADDRESS);
+  //   await stake(testSetup,proposalId2,YES,web3.utils.toWei("1500"),accounts[0]);
+  //   await helpers.increaseTime(preBoostedVotePeriodLimit+1);
+  //   await testSetup.genesisProtocol.execute(proposalId2);
+  //   const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //   assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //   assert.equal(await threshold(testSetup),3);
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //   await stake(testSetup,proposalId,YES,100,accounts[0]);
+  //
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+  //   assert.equal(proposalInfo[10],3*Math.pow(2,REAL_FBITS));//check proposal own threshold
+  //
+  //   assert.equal(await score(testSetup,proposalId),(100/15).toFixed(2));
+  //   assert.equal(await threshold(testSetup),3);
+  //   //now decrease threshold
+  //   await testSetup.genesisProtocol.vote(proposalId2,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
+  //   assert.equal(await threshold(testSetup),1);
+  //   var tx = await stake(testSetup,proposalId,NO,35,accounts[1],"ConfidenceLevelChange"); //downstake 35 to make score =2.
+  //   assert.equal(tx[0].event, "ConfidenceLevelChange");
+  //   assert.equal(tx[0].args._proposalId, proposalId);
+  //   assert.equal(tx[0].args._confidenceThreshold, Math.pow(2,REAL_FBITS));
+  //
+  //   assert.equal(await score(testSetup,proposalId),2);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //no change is state
+  // });
+  //
+  //
+  // it("prepare for boost and boost with a new threshold  ", async () => {
+  //
+  //   var preBoostedVotePeriodLimit = 60;
+  //   var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
+  //   var proposalId = await propose(testSetup);
+  //
+  //   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //
+  //   await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+  //   await stake(testSetup,proposalId,YES,30,accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalTotalStakesIndex],30+15); //totalStakes
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+  //
+  //   //boost another proposal
+  //   var proposalId2 = await propose(testSetup);
+  //   await testSetup.genesisProtocol.vote(proposalId2,YES,0,helpers.NULL_ADDRESS);
+  //   await stake(testSetup,proposalId2,YES,web3.utils.toWei("1500"),accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId2);
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+  //   await helpers.increaseTime(preBoostedVotePeriodLimit*2);
+  //   await testSetup.genesisProtocol.execute(proposalId2);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId2);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
+  //
+  //   //proposalId2 is now boosted
+  //   const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+  //   assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
+  //   //try to execute proposalId
+  //   await testSetup.genesisProtocol.execute(proposalId);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //still preBoosted
+  //
+  //   assert.equal(await threshold(testSetup),2);
+  //
+  //   var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
+  //   assert.equal(proposalStatus[2],30);
+  //   assert.equal(proposalStatus[3],15);
+  //
+  //   await stake(testSetup,proposalId,YES,web3.utils.toWei("3000"),accounts[0]);
+  //   proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+  //   assert.equal(proposalInfo[proposalStateIndex],boostedState);   //now it is boosted
+  //
+  // });
 
   it("executeBoosted", async () => {
 
@@ -1731,7 +1731,10 @@ contract('GenesisProtocol', accounts => {
     var daoBounty =  15;
     var totalStakes = 100 + daoBounty;
 
-    assert.equal(redeemToken,Math.floor(((totalStakes*(100-expirationCallBountyPercentage))/100)-daoBounty));
+    var totalStakesLeftAfterCallBounty = totalStakes - ((expirationCallBountyPercentage* (100)/100));
+    var _totalStakes = totalStakesLeftAfterCallBounty - daoBounty;
+    var reward = (100*(_totalStakes))/100;
+    assert.equal(redeemToken,reward);
 
   });
 

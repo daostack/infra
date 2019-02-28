@@ -217,13 +217,14 @@ contract GenesisProtocolLogic is IntVoteInterface {
     }
 
     /**
-      * @dev executeBoosted try to execute a boosted proposal if it is expired
+      * @dev executeBoosted try to execute a boosted or QuietEndingPeriod proposal if it is expired
       * @param _proposalId the id of the proposal
       * @return uint256 expirationCallBounty the bounty amount for the expiration call
      */
     function executeBoosted(bytes32 _proposalId) external returns(uint256 expirationCallBounty) {
         Proposal storage proposal = proposals[_proposalId];
-        require(proposal.state == ProposalState.Boosted);
+        require(proposal.state == ProposalState.Boosted || proposal.state == ProposalState.QuietEndingPeriod,
+        "proposal state in not Boosted nor QuietEndingPeriod");
         require(_execute(_proposalId), "proposal need to expire");
         uint256 expirationCallBountyPercentage =
         // solhint-disable-next-line not-rely-on-time
@@ -330,10 +331,9 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 rewards[0] = staker.amount;
             } else if (staker.vote == proposal.winningVote) {
                 uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
-                uint256 totalStakes = proposal.stakes[YES].add(proposal.stakes[NO]);
+                uint256 totalStakes = proposal.stakes[NO].add(proposal.stakes[YES]);
                 if (staker.vote == YES) {
-                    uint256 totalStakesLeftAfterCallBounty =
-                    ((totalStakes.mul(100 - proposal.expirationCallBountyPercentage))/100);
+                    uint256 totalStakesLeftAfterCallBounty = totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
                     if (proposal.daoBounty < totalStakesLeftAfterCallBounty) {
                         uint256 _totalStakes = totalStakesLeftAfterCallBounty.sub(proposal.daoBounty);
                         rewards[0] = (staker.amount.mul(_totalStakes))/totalWinningStakes;
