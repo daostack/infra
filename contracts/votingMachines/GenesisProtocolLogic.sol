@@ -325,20 +325,21 @@ contract GenesisProtocolLogic is IntVoteInterface {
         Staker storage staker = proposal.stakers[_beneficiary];
         uint256 totalStakes = proposal.stakes[NO].add(proposal.stakes[YES]);
         uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
+
         if (staker.amount > 0) {
+            uint256 totalStakesLeftAfterCallBounty =
+            totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
             if (proposal.state == ProposalState.ExpiredInQueue) {
                 //Stakes of a proposal that expires in Queue are sent back to stakers
                 rewards[0] = staker.amount;
             } else if (staker.vote == proposal.winningVote) {
                 if (staker.vote == YES) {
-                    uint256 totalStakesLeftAfterCallBounty =
-                    totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
                     if (proposal.daoBounty < totalStakesLeftAfterCallBounty) {
                         uint256 _totalStakes = totalStakesLeftAfterCallBounty.sub(proposal.daoBounty);
                         rewards[0] = (staker.amount.mul(_totalStakes))/totalWinningStakes;
                     }
                 } else {
-                    rewards[0] = (staker.amount.mul(totalStakes))/totalWinningStakes;
+                    rewards[0] = (staker.amount.mul(totalStakesLeftAfterCallBounty))/totalWinningStakes;
                 }
             }
             staker.amount = 0;
