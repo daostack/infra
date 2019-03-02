@@ -345,12 +345,12 @@ contract GenesisProtocolLogic is IntVoteInterface {
             staker.amount = 0;
         }
             //dao redeem its winnings
-        if (proposal.daoRedeemItsWinnings == false && _beneficiary == organizations[proposal.organizationId]) {
-
-            if (proposal.winningVote == NO) {
-                rewards[0] =
-                rewards[0].add((proposal.daoBounty.mul(totalStakes))/totalWinningStakes).sub(proposal.daoBounty);
-            }
+        if (proposal.daoRedeemItsWinnings == false &&
+            _beneficiary == organizations[proposal.organizationId] &&
+            proposal.state != ProposalState.ExpiredInQueue &&
+            proposal.winningVote == NO) {
+            rewards[0] =
+            rewards[0].add((proposal.daoBounty.mul(totalStakes))/totalWinningStakes).sub(proposal.daoBounty);
             proposal.daoRedeemItsWinnings = true;
         }
 
