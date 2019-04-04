@@ -1620,6 +1620,43 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalInfo[proposalStateIndex],3);   //state back to q
 
   });
+
+  it("from prepare for boost back to que after pre boosted time passed", async () => {
+
+    var preBoostedVotePeriodLimit = 60;
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,1000,60,preBoostedVotePeriodLimit);
+    var proposalId = await propose(testSetup);
+
+    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+
+    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+
+    await stake(testSetup,proposalId,YES,50,accounts[0]);
+
+    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalTotalStakesIndex],50+15); //totalStakes
+
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+    assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
+
+    //boost 2 proposals
+    let proposalIdTemp;
+    for (var i=0;i<2;i++) {
+        proposalIdTemp = await propose(testSetup);//boost a proposal
+        await testSetup.genesisProtocol.vote(proposalIdTemp,YES,0,helpers.NULL_ADDRESS);
+        await stake(testSetup,proposalIdTemp,YES,web3.utils.toWei("1500"),accounts[0]);
+        await helpers.increaseTime(preBoostedVotePeriodLimit+1);
+        await testSetup.genesisProtocol.execute(proposalIdTemp);
+    }
+
+    const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
+    assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),2);
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState); //state back to q
+    await stake(testSetup,proposalId,NO,200,accounts[1]); //downstake ...
+    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalStateIndex],3);   //state back to q
+  });
+
   it("prepare for boost check high from the minimum threshold", async () => {
 
     var preBoostedVotePeriodLimit = 60;
