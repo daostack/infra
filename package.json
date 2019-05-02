@@ -52,7 +52,7 @@
     "pug": "^2.0.0-rc.4",
     "rimraf": "^2.6.2",
     "run-with-ganache": "^0.1.1",
-    "truffle": "5.0.4",
+    "truffle": "5.0.12",
     "web3-utils": "^1.0.0-beta.37",
     "solhint": "^1.5.1"
   },
@@ -70,7 +70,7 @@
     "arc"
   ],
   "engines": {
-    "node": ">=10.15.1"
+    "node": ">=10.15.3"
   },
   "author": "DAOstack (https://www.daostack.io)",
   "license": "GPL-3.0",
@@ -83,6 +83,6 @@
     "openzeppelin-solidity": "2.1.3"
   },
   "peerDependencies": {
-    "ganache-cli": "^6.4.1"
+    "ganache-cli": "^6.4.3"
   }
 }
