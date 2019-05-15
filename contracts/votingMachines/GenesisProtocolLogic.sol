@@ -73,6 +73,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint256 totalStakes;// Total number of tokens staked which can be redeemable by stakers.
         uint256 confidenceThreshold;
         //The percentage from upper stakes which the caller for the expiration was given.
+        //in 1/10 units (e.g a value of 7 means 0.7 %)
         uint256 expirationCallBountyPercentage;
         uint[3] times; //times[0] - submittedTime
                        //times[1] - boostedPhaseTime
@@ -216,6 +217,10 @@ contract GenesisProtocolLogic is IntVoteInterface {
 
     /**
       * @dev executeBoosted try to execute a boosted or QuietEndingPeriod proposal if it is expired
+      * it rewards the msg.sender with P % of the proposal's upstakes upon a successful call to this function.
+      * P = t/10 and t = number of blocks passed between the proposal's timeout and a successful call to this function.
+      * the function assume an avergae block time of 15 seconds.
+      * max P is 10 %.
       * @param _proposalId the id of the proposal
       * @return uint256 expirationCallBounty the bounty amount for the expiration call
      */
@@ -224,14 +229,16 @@ contract GenesisProtocolLogic is IntVoteInterface {
         require(proposal.state == ProposalState.Boosted || proposal.state == ProposalState.QuietEndingPeriod,
         "proposal state in not Boosted nor QuietEndingPeriod");
         require(_execute(_proposalId), "proposal need to expire");
-        uint256 expirationCallBountyPercentage =
+        uint256 blocksSinceTimeOut =
         // solhint-disable-next-line not-rely-on-time
-        (uint(1).add(now.sub(proposal.currentBoostedVotePeriodLimit.add(proposal.times[1])).div(15)));
-        if (expirationCallBountyPercentage > 100) {
-            expirationCallBountyPercentage = 100;
+            now.sub(proposal.currentBoostedVotePeriodLimit.add(proposal.times[1])).div(15);
+
+        if (blocksSinceTimeOut > 100) {
+            blocksSinceTimeOut = 100;
         }
-        proposal.expirationCallBountyPercentage = expirationCallBountyPercentage;
-        expirationCallBounty = expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100);
+
+        proposal.expirationCallBountyPercentage = blocksSinceTimeOut;
+        expirationCallBounty = calcExecuteCallBounty(_proposalId);
         require(stakingToken.transfer(msg.sender, expirationCallBounty), "transfer to msg.sender failed");
         emit ExpirationCallBounty(_proposalId, msg.sender, expirationCallBounty);
     }
@@ -314,21 +321,13 @@ contract GenesisProtocolLogic is IntVoteInterface {
         require((proposal.state == ProposalState.Executed)||(proposal.state == ProposalState.ExpiredInQueue),
         "Proposal should be Executed or ExpiredInQueue");
         Parameters memory params = parameters[proposal.paramsHash];
-        uint256 lostReputation;
-        if (proposal.winningVote == YES) {
-            lostReputation = proposal.preBoostedVotes[NO];
-        } else {
-            lostReputation = proposal.preBoostedVotes[YES];
-        }
-        lostReputation = (lostReputation.mul(params.votersReputationLossRatio))/100;
         //as staker
         Staker storage staker = proposal.stakers[_beneficiary];
-        uint256 totalStakes = proposal.stakes[NO].add(proposal.stakes[YES]);
         uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
-
+        uint256 totalStakesLeftAfterCallBounty =
+        proposal.stakes[NO].add(proposal.stakes[YES]).sub(calcExecuteCallBounty(_proposalId));
         if (staker.amount > 0) {
-            uint256 totalStakesLeftAfterCallBounty =
-            totalStakes.sub(proposal.expirationCallBountyPercentage.mul(proposal.stakes[YES]).div(100));
+
             if (proposal.state == ProposalState.ExpiredInQueue) {
                 //Stakes of a proposal that expires in Queue are sent back to stakers
                 rewards[0] = staker.amount;
@@ -350,7 +349,9 @@ contract GenesisProtocolLogic is IntVoteInterface {
             proposal.state != ProposalState.ExpiredInQueue &&
             proposal.winningVote == NO) {
             rewards[0] =
-            rewards[0].add((proposal.daoBounty.mul(totalStakes))/totalWinningStakes).sub(proposal.daoBounty);
+            rewards[0]
+            .add((proposal.daoBounty.mul(totalStakesLeftAfterCallBounty))/totalWinningStakes)
+            .sub(proposal.daoBounty);
             proposal.daoRedeemItsWinnings = true;
         }
 
@@ -361,6 +362,13 @@ contract GenesisProtocolLogic is IntVoteInterface {
               //give back reputation for the voter
                 rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100);
             } else if (proposal.winningVote == voter.vote) {
+                uint256 lostReputation;
+                if (proposal.winningVote == YES) {
+                    lostReputation = proposal.preBoostedVotes[NO];
+                } else {
+                    lostReputation = proposal.preBoostedVotes[YES];
+                }
+                lostReputation = (lostReputation.mul(params.votersReputationLossRatio))/100;
                 rewards[1] = ((voter.reputation.mul(params.votersReputationLossRatio))/100)
                 .add((voter.reputation.mul(lostReputation))/proposal.preBoostedVotes[proposal.winningVote]);
             }
@@ -748,5 +756,14 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 (pState == ProposalState.QuietEndingPeriod)||
                 (pState == ProposalState.Queued)
         );
+    }
+
+    /**
+      * @dev calcExecuteCallBounty calculate the execute boosted call bounty
+      * @param _proposalId the ID of the proposal
+      * @return uint256 executeCallBounty
+    */
+    function calcExecuteCallBounty(bytes32 _proposalId) private view returns(uint256) {
+        return proposals[_proposalId].expirationCallBountyPercentage.mul(proposals[_proposalId].stakes[YES]).div(1000);
     }
 }

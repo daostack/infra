@@ -79,7 +79,7 @@ const setup = async function (accounts,
    await testSetup.org.reputation.mint(accounts[0],testSetup.reputationArray[0]);
    await testSetup.org.reputation.mint(accounts[1],testSetup.reputationArray[1]);
    await testSetup.org.reputation.mint(accounts[2],testSetup.reputationArray[2]);
-   await testSetup.stakingToken.transfer(accounts[1],1000);
+   await testSetup.stakingToken.transfer(accounts[1],web3.utils.toWei('3'));
    await testSetup.stakingToken.transfer(accounts[2],1000);
    testSetup.genesisProtocolCallbacks = await GenesisProtocolCallbacks.new(testSetup.org.reputation.address,testSetup.stakingToken.address,testSetup.genesisProtocol.address);
    await testSetup.org.reputation.transferOwnership(testSetup.genesisProtocolCallbacks.address);
@@ -1743,11 +1743,13 @@ contract('GenesisProtocol', accounts => {
 
   it("executeBoosted", async () => {
 
-    var testSetup = await setup(accounts);
+    var minimumDaoBounty = web3.utils.toWei("0.1");
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,1,minimumDaoBounty,10);
 
     var proposalId = await propose(testSetup);
     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
+    var userStake = web3.utils.toWei("1");
+    await stake(testSetup,proposalId,YES,userStake,accounts[0]);
     try {
          await testSetup.genesisProtocol.executeBoosted(proposalId);
          assert(false, 'cannot call executeBoosted if not expired');
@@ -1757,28 +1759,25 @@ contract('GenesisProtocol', accounts => {
     var addTime =15 ;
     await helpers.increaseTime(60+addTime);
     var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
-
+    var expectedBounty = (((addTime/15)/10)/100) * userStake;
     assert.equal(tx.logs[3].event, "ExpirationCallBounty");
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
-    assert.equal(tx.logs[3].args._amount, 1 + addTime/15);
+    assert.equal(tx.logs[3].args._amount, expectedBounty);
 
     var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-    var redeemToken = redeemRewards[0].toNumber();
+    var redeemToken = redeemRewards[0];
 
     var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
     var expirationCallBountyPercentage = proposalInfo[11];
-    assert.equal(expirationCallBountyPercentage,1 + addTime/15);
-    var daoBounty =  15;
-    var totalStakes = 100 + daoBounty;
-
-    var totalStakesLeftAfterCallBounty = totalStakes - ((expirationCallBountyPercentage* (100)/100));
+    assert.equal(expirationCallBountyPercentage,addTime/15);
+    var daoBounty =  new web3.utils.BN(minimumDaoBounty);
+    var totalStakes = (new web3.utils.BN(userStake)).add(daoBounty);
+    var totalStakesLeftAfterCallBounty = totalStakes.sub(new web3.utils.BN(expectedBounty));
     var _totalStakes = totalStakesLeftAfterCallBounty - daoBounty;
-    assert.equal(redeemToken,(100*(_totalStakes))/100);
-
+    assert.equal(redeemToken.toString(),_totalStakes.toString());
     await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
     assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),0);
-
   });
 
   it("executeBoosted max (100)", async () => {
@@ -1786,41 +1785,53 @@ contract('GenesisProtocol', accounts => {
     var testSetup = await setup(accounts);
     var proposalId = await propose(testSetup);
     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    await stake(testSetup,proposalId,YES,100,accounts[0]);
+    var userStake = web3.utils.toWei("1");
+    await stake(testSetup,proposalId,YES,userStake,accounts[0]);
     var addTime =15*100 ;
     await helpers.increaseTime(60+addTime);
     var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
+    var expectedBounty = 100*userStake/1000;
     assert.equal(tx.logs[3].event, "ExpirationCallBounty");
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
-    assert.equal(tx.logs[3].args._amount, 100);
-    assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),0);
+    assert.equal(tx.logs[3].args._amount, expectedBounty );
+    var genesisProtocolBalance = await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address);
+    assert.equal(genesisProtocolBalance.eq((new web3.utils.BN(userStake)).sub(new web3.utils.BN(expectedBounty.toString()))),true);
     let daoBounty = await testSetup.genesisProtocol.redeemDaoBounty.call(proposalId,accounts[0]);
     assert.equal(daoBounty[1],15);
   });
 
   it("executeBoosted check NO stake", async () => {
 
-    var testSetup = await setup(accounts);
+    var minimumDaoBounty = web3.utils.toWei("1");
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,1,minimumDaoBounty,10);
     var proposalId = await propose(testSetup);
-    await stake(testSetup,proposalId,NO,100,accounts[1]);
-    await stake(testSetup,proposalId,YES,300,accounts[0]);
+    var user1Stake = web3.utils.toWei("1");
+    var user2Stake = web3.utils.toWei("4");
+    await stake(testSetup,proposalId,NO,user1Stake,accounts[1]);
+    await stake(testSetup,proposalId,YES,user2Stake,accounts[0]);
+    var totalStakes = web3.utils.toWei("5");
     var addTime =15;
     await helpers.increaseTime(60+addTime);
-    assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),400);
+    assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).toString(),totalStakes.toString());
     var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
+    var expectedBounty = new web3.utils.BN((1*user2Stake/1000).toString());
     assert.equal(tx.logs[3].event, "ExpirationCallBounty");
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
-    assert.equal(tx.logs[3].args._amount, 6);
-    assert.equal((await testSetup.genesisProtocol.proposals(proposalId)).expirationCallBountyPercentage.toNumber(),2);
-    assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),400 - 6);
+    assert.equal(tx.logs[3].args._amount, expectedBounty.toString());
+    assert.equal((await testSetup.genesisProtocol.proposals(proposalId)).expirationCallBountyPercentage.toNumber(),1);
+    var totalStakesLeftAfterCallBounty = (new web3.utils.BN(totalStakes)).sub(expectedBounty);
+    assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).eq(totalStakesLeftAfterCallBounty),true);
     await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-    assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),400 - 6);
+    assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).eq(totalStakesLeftAfterCallBounty),true);
     await testSetup.genesisProtocol.redeem(proposalId,accounts[1]);
-    let daoBounty = 15;
-    let account1Reward = Math.floor(((100)*(400 - 6 + daoBounty))/115);
-    assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),(400 - 6)-account1Reward);
+    let daoBounty = minimumDaoBounty;
+    let user1StakeBigNumber = new web3.utils.BN(user1Stake);
+    let totalNOStakes = (new web3.utils.BN(daoBounty)).add(user1StakeBigNumber);
+    let totalStakesLeftIncludeDaoBounty =  totalNOStakes.add(new web3.utils.BN(user2Stake)).sub(expectedBounty);
+    let account1Reward = user1StakeBigNumber.mul(totalStakesLeftIncludeDaoBounty).div(totalNOStakes);
+    assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).toString(),totalStakesLeftAfterCallBounty.sub(account1Reward).toString());
     await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
     assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),0);
     let daoBountyReward = await testSetup.genesisProtocol.redeemDaoBounty.call(proposalId,accounts[0]);
