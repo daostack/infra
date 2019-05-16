@@ -72,9 +72,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         uint256 daoBounty;
         uint256 totalStakes;// Total number of tokens staked which can be redeemable by stakers.
         uint256 confidenceThreshold;
-        //The percentage from upper stakes which the caller for the expiration was given.
-        //in 1/10 units (e.g a value of 7 means 0.7 %)
-        uint256 expirationCallBountyPercentage;
+        //The promille from upper stakes which the caller for the expiration was given.
+        uint256 expirationCallBountyProMille;
         uint[3] times; //times[0] - submittedTime
                        //times[1] - boostedPhaseTime
                        //times[2] -preBoostedPhaseTime;
@@ -237,7 +236,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
             blocksSinceTimeOut = 100;
         }
 
-        proposal.expirationCallBountyPercentage = blocksSinceTimeOut;
+        proposal.expirationCallBountyProMille = blocksSinceTimeOut;
         expirationCallBounty = calcExecuteCallBounty(_proposalId);
         require(stakingToken.transfer(msg.sender, expirationCallBounty), "transfer to msg.sender failed");
         emit ExpirationCallBounty(_proposalId, msg.sender, expirationCallBounty);
@@ -439,7 +438,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
       * @return uint256 executeCallBounty
     */
     function calcExecuteCallBounty(bytes32 _proposalId) public view returns(uint256) {
-        return proposals[_proposalId].expirationCallBountyPercentage.mul(proposals[_proposalId].stakes[YES]).div(1000);
+        return proposals[_proposalId].expirationCallBountyProMille.mul(proposals[_proposalId].stakes[YES]).div(1000);
     }
 
     /**
