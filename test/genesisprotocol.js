@@ -134,7 +134,7 @@ const checkProposalInfo = async function(proposalId, _proposalInfo,_times,genesi
   assert.equal(proposalInfo[9], _proposalInfo[9]);
   //int threshold
   assert.equal(proposalInfo[10], _proposalInfo[10]);
-  //uint expirationCallBountyPercentage
+  //uint expirationCallBountyProMille
   assert.equal(proposalInfo[11], _proposalInfo[11]);
   // - the mapping and array are simply not returned at all in the array
   checkProposalTimes(proposalId,_times,genesisProtocol);
@@ -1769,8 +1769,8 @@ contract('GenesisProtocol', accounts => {
     var redeemToken = redeemRewards[0];
 
     var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
-    var expirationCallBountyPercentage = proposalInfo[11];
-    assert.equal(expirationCallBountyPercentage,addTime/15);
+    var expirationCallBountyProMille = proposalInfo[11];
+    assert.equal(expirationCallBountyProMille,addTime/15);
     var daoBounty =  new web3.utils.BN(minimumDaoBounty);
     var totalStakes = (new web3.utils.BN(userStake)).add(daoBounty);
     var totalStakesLeftAfterCallBounty = totalStakes.sub(new web3.utils.BN(expectedBounty));
@@ -1820,7 +1820,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
     assert.equal(tx.logs[3].args._amount, expectedBounty.toString());
-    assert.equal((await testSetup.genesisProtocol.proposals(proposalId)).expirationCallBountyPercentage.toNumber(),1);
+    assert.equal((await testSetup.genesisProtocol.proposals(proposalId)).expirationCallBountyProMille.toNumber(),1);
     var totalStakesLeftAfterCallBounty = (new web3.utils.BN(totalStakes)).sub(expectedBounty);
     assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).eq(totalStakesLeftAfterCallBounty),true);
     await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
