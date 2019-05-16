@@ -305,6 +305,15 @@ contract GenesisProtocolLogic is IntVoteInterface {
     }
 
     /**
+      * @dev calcExecuteCallBounty calculate the execute boosted call bounty
+      * @param _proposalId the ID of the proposal
+      * @return uint256 executeCallBounty
+    */
+    function calcExecuteCallBounty(bytes32 _proposalId) external view returns(uint256) {
+        return proposals[_proposalId].expirationCallBountyPercentage.mul(proposals[_proposalId].stakes[YES]).div(1000);
+    }
+
+    /**
      * @dev redeem a reward for a successful stake, vote or proposing.
      * The function use a beneficiary address as a parameter (and not msg.sender) to enable
      * users to redeem on behalf of someone else.
@@ -756,14 +765,5 @@ contract GenesisProtocolLogic is IntVoteInterface {
                 (pState == ProposalState.QuietEndingPeriod)||
                 (pState == ProposalState.Queued)
         );
-    }
-
-    /**
-      * @dev calcExecuteCallBounty calculate the execute boosted call bounty
-      * @param _proposalId the ID of the proposal
-      * @return uint256 executeCallBounty
-    */
-    function calcExecuteCallBounty(bytes32 _proposalId) private view returns(uint256) {
-        return proposals[_proposalId].expirationCallBountyPercentage.mul(proposals[_proposalId].stakes[YES]).div(1000);
     }
 }
