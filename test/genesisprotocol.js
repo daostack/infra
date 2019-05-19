@@ -304,7 +304,7 @@ contract('GenesisProtocol', accounts => {
                                           testSetup.genesisProtocolParams.paramsHash,
                                           daoBountyRemain,
                                           0, //daoBounty
-                                          daoBountyRemain, //totalStake (dao downstake)
+                                          0, //totalStake
                                           0,
                                           0,
                                         ],
@@ -331,7 +331,7 @@ contract('GenesisProtocol', accounts => {
                                             testSetup.genesisProtocolParams.paramsHash,
                                             daoBountyRemain,
                                             0, //daoBounty
-                                            daoBountyRemain, //totalStake (dao downstake)
+                                            0, //totalStake
                                             0,
                                             0
                                           ],
@@ -357,7 +357,7 @@ contract('GenesisProtocol', accounts => {
                                             testSetup.genesisProtocolParams.paramsHash,
                                             daoBountyRemain,
                                             0, //daoBounty
-                                            daoBountyRemain, //totalStake (dao downstake)
+                                            0, //totalStake
                                             0,
                                             0
                                           ],
@@ -677,7 +677,7 @@ contract('GenesisProtocol', accounts => {
                                           testSetup.genesisProtocolParams.paramsHash,
                                           daoBountyRemain,
                                           0, //daoBounty
-                                          daoBountyRemain, //totalStake (dao downstake)
+                                          0, //totalStake
                                           0,
                                           0
                                           ],
@@ -824,23 +824,21 @@ contract('GenesisProtocol', accounts => {
 
     var proposalId = await propose(testSetup);
 
-    var proposalStatus  = await testSetup.genesisProtocol.proposalStatus(proposalId);
-    let maxTotalStakeAllowed = ((new BigNumber(2)).toPower(128));
-    let maxTotalStakesRemain = maxTotalStakeAllowed.sub(proposalStatus[3]);
+    let maxTotalStakeAllowed = ((new BigNumber(2)).toPower(128)).sub(15);
 
     try {
-        await stake(testSetup,proposalId,1,maxTotalStakesRemain.add(1).toString(10),accounts[0]);
+        await stake(testSetup,proposalId,1,maxTotalStakeAllowed.add(1).toString(10),accounts[0]);
         assert(false, 'stake more than allowed should revert');
       } catch (ex) {
         helpers.assertVMException(ex);
       }
 
-    var tx = await stake(testSetup,proposalId,1,maxTotalStakesRemain.toString(10),accounts[0]);
+    var tx = await stake(testSetup,proposalId,1,maxTotalStakeAllowed.toString(10),accounts[0]);
     assert.equal(tx.length, 1);
     assert.equal(tx[0].event, "Stake");
     assert.equal(tx[0].args._staker, accounts[0]);
     assert.equal(tx[0].args._vote, 1);
-    assert.equal(tx[0].args._amount, maxTotalStakesRemain.toString(10));
+    assert.equal(tx[0].args._amount, maxTotalStakeAllowed.toString(10));
   });
 
   it("stake log", async () => {
@@ -959,7 +957,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(staker[1],20);
 
     let proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[9],20+15); //totalStakes + dao downstake
+    assert.equal(proposalInfo[9],20); //totalStakes + dao downstake
   });
 
   it("stake without approval - fail", async () => {
@@ -1006,7 +1004,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
     await stake(testSetup,proposalId,YES,100,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],boostedState);  //state boosted
     //S = (S+) /(S-)
     var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
@@ -1029,7 +1027,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
     await stake(testSetup,proposalId,YES,30,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],30+2); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],30); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],boostedState);  //state boosted
     //S = (S+) /(S-)
     var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
@@ -1068,7 +1066,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
 
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
 
     //S* POW(R/totalR)
@@ -1092,7 +1090,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(score,0);
     await stake(testSetup,proposalId,YES,100,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),true);
     proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
@@ -1116,7 +1114,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
 
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
     assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
@@ -1155,7 +1153,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
 
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     const organizationId = await web3.utils.soliditySha3(testSetup.genesisProtocolCallbacks.address,helpers.NULL_ADDRESS);
     assert.equal(proposalInfo[proposalStateIndex],boostedState);   //state boosted
     assert.equal(await testSetup.genesisProtocol.averagesDownstakesOfBoosted(organizationId),15);
@@ -1204,10 +1202,10 @@ contract('GenesisProtocol', accounts => {
     var redeemToken = redeemRewards[0].toNumber();
     assert.equal(redeemToken,((100+15-15)*100)/100);
     assert.equal(await testSetup.stakingToken.balanceOf(accounts[0]),accounts0Balance-100);
-    assert.equal(proposalInfo[9],100+15);
+    assert.equal(proposalInfo[9],100);
     var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[9],15);
+    assert.equal(proposalInfo[9],0);
     assert.equal(tx.logs.length,2);
     assert.equal(tx.logs[0].event, "Redeem");
     assert.equal(tx.logs[0].args._proposalId, proposalId);
@@ -1561,7 +1559,7 @@ contract('GenesisProtocol', accounts => {
       var redeemToken = redeemRewards[0].toNumber();
       var tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
       proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[9],15);
+      assert.equal(proposalInfo[9],0);
       assert.equal(tx.logs.length,1);
       assert.equal(tx.logs[0].event, "Redeem");
       assert.equal(tx.logs[0].args._proposalId, proposalId);
@@ -1587,7 +1585,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
 
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
 
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
 
@@ -1611,7 +1609,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
 
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
 
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
     assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
@@ -1634,7 +1632,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,50,accounts[0]);
 
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],50+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],50); //totalStakes
 
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
     assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
@@ -1675,7 +1673,7 @@ contract('GenesisProtocol', accounts => {
     await stake(testSetup,proposalId,YES,100,accounts[0]);
 
     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],100+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
     assert.equal(proposalInfo[10],3*Math.pow(2,REAL_FBITS));//check proposal own threshold
 
@@ -1711,7 +1709,7 @@ contract('GenesisProtocol', accounts => {
     //preboost proposalId
     await stake(testSetup,proposalId,YES,60,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[proposalTotalStakesIndex],60+15); //totalStakes
+    assert.equal(proposalInfo[proposalTotalStakesIndex],60); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
     await helpers.increaseTime(preBoostedVotePeriodLimit/2 +1 );
     await testSetup.genesisProtocol.execute(proposalId2);
@@ -1777,6 +1775,8 @@ contract('GenesisProtocol', accounts => {
     var _totalStakes = totalStakesLeftAfterCallBounty - daoBounty;
     assert.equal(redeemToken.toString(),_totalStakes.toString());
     await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
+    proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo.totalStakes,0);
     assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),0);
   });
 
@@ -1815,7 +1815,9 @@ contract('GenesisProtocol', accounts => {
     await helpers.increaseTime(60+addTime);
     assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).toString(),totalStakes.toString());
     var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
-
+    addTime = (await testSetup.genesisProtocol.proposals(proposalId)).secondsFromTimeOutTillExecuteBoosted.toNumber();
+    //check the time is in a resonable range
+    assert.equal(((addTime <= 18) && (addTime >=15)),true);
     var expectedBounty = new web3.utils.BN((addTime*user2Stake/15000).toString());
     assert.equal(tx.logs[3].event, "ExpirationCallBounty");
     assert.equal(tx.logs[3].args._proposalId, proposalId);

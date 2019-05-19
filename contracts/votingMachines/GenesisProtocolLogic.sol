@@ -200,12 +200,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         //calc dao bounty
         uint256 daoBounty =
         parameters[_paramsHash].daoBountyConst.mul(averagesDownstakesOfBoosted[proposal.organizationId]).div(100);
-        if (daoBounty < parameters[_paramsHash].minimumDaoBounty) {
-            proposal.daoBountyRemain = parameters[_paramsHash].minimumDaoBounty;
-        } else {
-            proposal.daoBountyRemain = daoBounty;
-        }
-        proposal.totalStakes = proposal.daoBountyRemain;
+        proposal.daoBountyRemain = daoBounty.max(parameters[_paramsHash].minimumDaoBounty);
         proposals[proposalId] = proposal;
         proposals[proposalId].stakes[NO] = proposal.daoBountyRemain;//dao downstake on the proposal
 
@@ -217,6 +212,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
       * @dev executeBoosted try to execute a boosted or QuietEndingPeriod proposal if it is expired
       * it rewards the msg.sender with P % of the proposal's upstakes upon a successful call to this function.
       * P = t/150, where t is the number of seconds passed since the the proposal's timeout.
+      * P is capped by 10%.
       * @param _proposalId the id of the proposal
       * @return uint256 expirationCallBounty the bounty amount for the expiration call
      */
@@ -231,6 +227,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         now.sub(proposal.currentBoostedVotePeriodLimit.add(proposal.times[1]));
 
         expirationCallBounty = calcExecuteCallBounty(_proposalId);
+        proposal.totalStakes = proposal.totalStakes.sub(expirationCallBounty);
         require(stakingToken.transfer(msg.sender, expirationCallBounty), "transfer to msg.sender failed");
         emit ExpirationCallBounty(_proposalId, msg.sender, expirationCallBounty);
     }
@@ -656,7 +653,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         //This is to prevent average downstakes calculation overflow
         //Note that any how GEN cap is 100000000 ether.
         require(staker.amount <= 0x100000000000000000000000000000000, "staking amount is too high");
-        require(proposal.totalStakes <= 0x100000000000000000000000000000000, "total stakes is too high");
+        require(proposal.totalStakes <= uint256(0x100000000000000000000000000000000).sub(proposal.daoBountyRemain),
+                "total stakes is too high");
 
         if (_vote == YES) {
             staker.amount4Bounty = staker.amount4Bounty.add(amount);
