@@ -262,15 +262,11 @@ contract('Reputation', accounts => {
         await reputation.mint(accounts[1], rep1, { from: accounts[0] });
         var tx = await reputation.mint(accounts[1], rep1, { from: accounts[0] });
         await reputation.mint(accounts[3], rep1, { from: accounts[0] });
-
-
         assert.equal (await reputation.totalSupply(),rep1+rep1+rep1);
-
         assert.equal (await reputation.totalSupplyAt(tx.receipt.blockNumber),rep1+rep1);
         assert.equal (await reputation.totalSupplyAt(tx.receipt.blockNumber-1),rep1);
         assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber),rep1+rep1);
         assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber-1),rep1);
-
         assert.equal (await reputation.balanceOfAt(accounts[3],tx.receipt.blockNumber),0);
 
     });
