@@ -840,7 +840,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
         IERC20 _gasToken = IERC20(address(gasToken));
 
         owner.transfer(address(this).balance);
-        _gasToken.safeTransfer(owner, _gasToken.balanceOf(address(this)));
+        _gasToken.transfer(owner, _gasToken.balanceOf(address(this)));
       }
     }
 
