@@ -33,7 +33,7 @@ contract GenesisProtocolLogic is IntVoteInterface {
 
     function setMintGasPrice(uint _mintGasPrice) public {
 
-      require(msg.sender == owner || msg.origin == owner, "Only owner is allowed to set mint gas price.");
+      require(msg.sender == owner || tx.origin == owner, "Only owner is allowed to set mint gas price.");
 
       mintGasPrice = _mintGasPrice;
     }
