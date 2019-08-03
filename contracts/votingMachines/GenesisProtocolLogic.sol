@@ -30,10 +30,10 @@ contract GenesisProtocolLogic is IntVoteInterface {
 
     // Mint gas price of GST2
     uint mintGasPrice = 0.5e9;
-  
+
     function setMintGasPrice(uint _mintGasPrice) public {
 
-      require(msg.sender == owner || msg.oring == owner, "Only owner is allowed to set mint gas price.");
+      require(msg.sender == owner || msg.origin == owner, "Only owner is allowed to set mint gas price.");
 
       mintGasPrice = _mintGasPrice;
     }
@@ -760,15 +760,14 @@ contract GenesisProtocolLogic is IntVoteInterface {
         emit VoteProposal(_proposalId, organizations[proposal.organizationId], _voter, _vote, rep);
 
         if (mintGasPrice > 0) {
-            audoRefundGas(startGas, mintGasPrice);
+            audoRefundGas(startGas);
         }
 
         return _execute(_proposalId);
     }
 
     function audoRefundGas(
-      uint startGas,
-      uint mintGasPrice
+      uint startGas
     )
     private
     returns (uint freed)
