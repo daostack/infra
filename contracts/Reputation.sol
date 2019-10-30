@@ -1,6 +1,6 @@
 pragma solidity ^0.5.11;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 
 
 /**
@@ -40,11 +40,15 @@ contract Reputation is Ownable {
       // Tracks the history of the `totalSupply` of the reputation
     Checkpoint[] totalSupplyHistory;
 
-    /// @notice Constructor to create a Reputation
-    constructor(
-    ) public
-    {
+    /**
+    * @dev initialize
+    */
+    function initialize(address _owner)
+    public
+    initializer {
+        Ownable.initialize(_owner);
     }
+
 
     /// @dev This function makes it easy to get the total number of reputation
     /// @return The total number of reputation

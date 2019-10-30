@@ -4,7 +4,7 @@ import "../votingMachines/VotingMachineCallbacksInterface.sol";
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/GenesisProtocol.sol";
 import "../Reputation.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 import "./Debug.sol";
 
 
@@ -24,13 +24,15 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     );
 
     /**
-     * @dev Constructor
-     */
-    constructor(Reputation _reputation, IERC20 _stakingToken, GenesisProtocol _genesisProtocol) public {
+    * @dev initialize
+    */
+    function initialize(Reputation _reputation, IERC20 _stakingToken, GenesisProtocol _genesisProtocol)
+    public
+    initializer {
         reputation = _reputation;
         stakingToken = _stakingToken;
         genesisProtocol = _genesisProtocol;
-        transferOwnership(address(genesisProtocol));
+        Ownable.initialize(address(_genesisProtocol));
     }
 
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)

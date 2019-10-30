@@ -2,7 +2,7 @@ pragma solidity ^0.5.11;
 
 import "../Reputation.sol";
 import "./IntVoteInterface.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "./VotingMachineCallbacksInterface.sol";
 import "./ProposalExecuteInterface.sol";
 

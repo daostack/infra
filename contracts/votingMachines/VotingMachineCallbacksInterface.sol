@@ -1,6 +1,6 @@
 pragma solidity ^0.5.11;
 
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 
 interface VotingMachineCallbacksInterface {
     function mintReputation(uint256 _amount, address _beneficiary, bytes32 _proposalId) external returns(bool);

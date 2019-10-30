@@ -2,7 +2,7 @@ pragma solidity ^0.5.11;
 
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 import "./Debug.sol";
 import "../Reputation.sol";
 import "../votingMachines/AbsoluteVote.sol";
@@ -23,13 +23,16 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     );
 
     /**
-     * @dev Constructor
-     */
-    constructor(Reputation _reputation, AbsoluteVote _absoluteVote) public {
+    * @dev initialize
+    */
+    function initialize(Reputation _reputation, AbsoluteVote _absoluteVote)
+    public
+    initializer {
         reputation = _reputation;
         absoluteVote = _absoluteVote;
-        transferOwnership(address(_absoluteVote));
+        Ownable.initialize(address(_absoluteVote));
     }
+
 
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
     external

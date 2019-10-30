@@ -11,6 +11,7 @@ const setupAbsoluteVote = async function (accounts,voteOnBehalf=helpers.NULL_ADD
   absoluteVote = await AbsoluteVote.new();
   // set up a reputation system
   reputation = await Reputation.new();
+  await reputation.initialize(accounts[0]);
   reputationArray = [200, 100, 700 ];
   await reputation.mint(accounts[0], reputationArray[0]);
   await reputation.mint(accounts[1], reputationArray[1]);
@@ -18,8 +19,8 @@ const setupAbsoluteVote = async function (accounts,voteOnBehalf=helpers.NULL_ADD
 
   // register some parameters
   await absoluteVote.setParameters(precReq, voteOnBehalf);
-  absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new(reputation.address,absoluteVote.address);
-
+  absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new();
+  await absoluteVoteExecuteMock.initialize(reputation.address,absoluteVote.address);
   return absoluteVote;
 };
 
@@ -97,7 +98,6 @@ contract('AbsoluteVote', accounts => {
 
   it("Sanity checks", async()=> {
       absoluteVote = await setupAbsoluteVote(accounts,helpers.NULL_ADDRESS, 50);
-
       // propose a vote
       const paramsHash = await absoluteVote.getParametersHash( 50,helpers.NULL_ADDRESS);
 
@@ -553,7 +553,9 @@ contract('AbsoluteVote', accounts => {
     // Initiate objects & give reputation
     const absoluteVote = await AbsoluteVote.new();
     const reputation = await Reputation.new();
-    absoluteVoteExecuteMock =  await AbsoluteVoteExecuteMock.new(reputation.address,absoluteVote.address);
+    await reputation.initialize(accounts[0]);
+    absoluteVoteExecuteMock =  await AbsoluteVoteExecuteMock.new();
+    await absoluteVoteExecuteMock.initialize(reputation.address,absoluteVote.address);
     reputationArray = [20, 10, 70];
     await reputation.mint(accounts[0], reputationArray[0]);
     await reputation.mint(accounts[1], reputationArray[1]);
@@ -724,17 +726,23 @@ contract('AbsoluteVote', accounts => {
     // Initiate parameters
     //accounts = web3.eth.accounts;
     reputation = await Reputation.new();
+    await reputation.initialize(accounts[0]);
     reputationArray = [20, 10, 70 ];
     await reputation.mint(accounts[0], reputationArray[0]);
     await reputation.mint(accounts[1], reputationArray[1]);
     await reputation.mint(accounts[2], reputationArray[2]);
-
     // proposal 1 - 6 choices - 30% - ownerVote disabled
     let absoluteVote1 = await AbsoluteVote.new();
-    absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new(reputation.address,absoluteVote1.address);
+    absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new();
+    await absoluteVoteExecuteMock.initialize(reputation.address,absoluteVote1.address);
+
     await absoluteVote1.setParameters(30, helpers.NULL_ADDRESS);
     const paramsHash1 = await absoluteVote1.getParametersHash( 30, helpers.NULL_ADDRESS);
-    let tx1 = await absoluteVoteExecuteMock.propose(6, paramsHash1, absoluteVoteExecuteMock.address,accounts[0],helpers.NULL_ADDRESS);
+    let tx1 = await absoluteVoteExecuteMock.propose(6,
+                                                    paramsHash1,
+                                                    absoluteVoteExecuteMock.address,
+                                                    accounts[0],
+                                                    helpers.NULL_ADDRESS);
     const proposalId1 = await helpers.getProposalId(tx1,absoluteVote1,"NewProposal");
 
     assert.isOk(proposalId1);
@@ -744,7 +752,8 @@ contract('AbsoluteVote', accounts => {
 
     // proposal 2 - Yes/No - 50% - ownerVote enabled
     let absoluteVote2 = await AbsoluteVote.new();
-    var absoluteVoteExecuteMock2 = await AbsoluteVoteExecuteMock.new(reputation.address,absoluteVote2.address);
+    var absoluteVoteExecuteMock2 = await AbsoluteVoteExecuteMock.new();
+    await absoluteVoteExecuteMock2.initialize(reputation.address,absoluteVote2.address);
 
     await absoluteVote2.setParameters( 50, helpers.NULL_ADDRESS);
     const paramsHash2 = await absoluteVote2.getParametersHash( 50, helpers.NULL_ADDRESS);

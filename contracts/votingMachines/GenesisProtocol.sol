@@ -1,6 +1,6 @@
 pragma solidity ^0.5.11;
 
-import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
 import "./GenesisProtocolLogic.sol";
 
 

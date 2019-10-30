@@ -12,6 +12,7 @@ const setupQuorumVote = async function (accounts,voteOnBehalf=helpers.NULL_ADDRE
 
   // set up a reputation system
   reputation = await Reputation.new();
+  await reputation.initialize(accounts[0]);
   reputationArray = [200, 100, 700 ];
   await reputation.mint(accounts[0], reputationArray[0]);
   await reputation.mint(accounts[1], reputationArray[1]);
@@ -19,7 +20,8 @@ const setupQuorumVote = async function (accounts,voteOnBehalf=helpers.NULL_ADDRE
 
   // register some parameters
   await quorumVote.setParameters(precReq, voteOnBehalf);
-  absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new(reputation.address,quorumVote.address);
+  absoluteVoteExecuteMock = await AbsoluteVoteExecuteMock.new();
+  await absoluteVoteExecuteMock.initialize(reputation.address,quorumVote.address);
 
   return quorumVote;
 };
@@ -61,7 +63,6 @@ contract('QuorumVote', accounts => {
 
   it("Sanity checks", async function () {
     quorumVote = await setupQuorumVote(accounts,helpers.NULL_ADDRESS, 50);
-
     // propose a vote
     const paramsHash = await quorumVote.getParametersHash( 50, helpers.NULL_ADDRESS );
     let tx = await absoluteVoteExecuteMock.propose(5, paramsHash, absoluteVoteExecuteMock.address, accounts[0],helpers.NULL_ADDRESS);

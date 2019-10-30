@@ -76,12 +76,18 @@ const setup = async function (accounts,
    testSetup.org = {};
    //let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
    testSetup.org.reputation  = await Reputation.new();
+   await testSetup.org.reputation.initialize(accounts[0]) ;
    await testSetup.org.reputation.mint(accounts[0],testSetup.reputationArray[0]);
    await testSetup.org.reputation.mint(accounts[1],testSetup.reputationArray[1]);
    await testSetup.org.reputation.mint(accounts[2],testSetup.reputationArray[2]);
    await testSetup.stakingToken.transfer(accounts[1],web3.utils.toWei('3'));
    await testSetup.stakingToken.transfer(accounts[2],1000);
-   testSetup.genesisProtocolCallbacks = await GenesisProtocolCallbacks.new(testSetup.org.reputation.address,testSetup.stakingToken.address,testSetup.genesisProtocol.address);
+   testSetup.genesisProtocolCallbacks = await GenesisProtocolCallbacks.new();
+   await testSetup.genesisProtocolCallbacks.initialize(
+     testSetup.org.reputation.address,
+     testSetup.stakingToken.address,
+     testSetup.genesisProtocol.address
+   );
    await testSetup.org.reputation.transferOwnership(testSetup.genesisProtocolCallbacks.address);
    testSetup.genesisProtocolParams= await setupGenesisProtocolParams(testSetup,
                                                                      _voteOnBehalf,
