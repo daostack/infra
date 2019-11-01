@@ -1,5 +1,5 @@
 {
-  "name": "@daostack/infra",
+  "name": "@daostack/infra-expiremental",
   "version": "0.0.1-rc.16",
   "description": "Base layer DAO's components",
   "files": [
