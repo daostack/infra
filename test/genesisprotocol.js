@@ -74,7 +74,6 @@ const setup = async function (accounts,
    testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
    testSetup.reputationArray = [200, 100, 700 ];
    testSetup.org = {};
-   //let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
    testSetup.org.reputation  = await Reputation.new();
    await testSetup.org.reputation.initialize(accounts[0]) ;
    await testSetup.org.reputation.mint(accounts[0],testSetup.reputationArray[0]);
@@ -1760,12 +1759,12 @@ contract('GenesisProtocol', accounts => {
 
   it("executeBoosted", async () => {
 
-    var minimumDaoBounty = web3.utils.toWei("0.1");
+    var minimumDaoBounty = await web3.utils.toWei("0.1");
     var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,1,minimumDaoBounty,10);
 
     var proposalId = await propose(testSetup);
     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-    var userStake = web3.utils.toWei("1");
+    var userStake = await web3.utils.toWei("1");
     await stake(testSetup,proposalId,YES,userStake,accounts[0]);
     try {
          await testSetup.genesisProtocol.executeBoosted(proposalId);
