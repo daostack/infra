@@ -8,13 +8,13 @@ import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/math/Math.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/utils/Address.sol";
-
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
 
 
 /**
  * @title GenesisProtocol implementation -an organization's voting machine scheme.
  */
-contract GenesisProtocolLogic is IntVoteInterface {
+contract GenesisProtocolLogic is Initializable, IntVoteInterface {
     using SafeMath for uint256;
     using Math for uint256;
     using RealMath for uint216;
@@ -135,9 +135,11 @@ contract GenesisProtocolLogic is IntVoteInterface {
     uint256 constant private MAX_BOOSTED_PROPOSALS = 4096;
 
     /**
-     * @dev Constructor
-     */
-    constructor(IERC20 _stakingToken) public {
+    * @dev initialize
+    */
+    function initialize(IERC20 _stakingToken)
+    external
+    initializer {
       //The GEN token (staking token) address is hard coded in the contract by GEN_TOKEN_ADDRESS .
       //This will work for a network which already hosted the GEN token on this address (e.g mainnet).
       //If such contract address does not exist in the network (e.g ganache)

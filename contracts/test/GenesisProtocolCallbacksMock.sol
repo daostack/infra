@@ -27,7 +27,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     * @dev initialize
     */
     function initialize(Reputation _reputation, IERC20 _stakingToken, GenesisProtocol _genesisProtocol)
-    public
+    external
     initializer {
         reputation = _reputation;
         stakingToken = _stakingToken;

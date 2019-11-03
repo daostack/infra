@@ -8,6 +8,8 @@ module.exports = async function(deployer) {
     await web3.eth.getAccounts(function(err,res) { accounts = res; });
     deployer.deploy(ERC827TokenMock,accounts[0],0).then(async function(){
       var stakingToken = await ERC827TokenMock.deployed();
-      await deployer.deploy(GenesisProtocol,stakingToken.address,{gas: constants.GAS_LIMIT});
+      await deployer.deploy(GenesisProtocol,{gas: constants.GAS_LIMIT});
+      var genesisProtocol = await GenesisProtocol.deployed();
+      await genesisProtocol.initialize(stakingToken.address);
   });
 };

@@ -24,15 +24,6 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     mapping(address=>uint256) public stakesNonce; //stakes Nonce
 
     /**
-     * @dev Constructor
-     */
-    constructor(IERC20 _stakingToken)
-    public
-    // solhint-disable-next-line no-empty-blocks
-    GenesisProtocolLogic(_stakingToken) {
-    }
-
-    /**
      * @dev staking function
      * @param _proposalId id of the proposal
      * @param _vote  NO(2) or YES(1).

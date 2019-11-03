@@ -26,13 +26,12 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     * @dev initialize
     */
     function initialize(Reputation _reputation, AbsoluteVote _absoluteVote)
-    public
+    external
     initializer {
         reputation = _reputation;
         absoluteVote = _absoluteVote;
         Ownable.initialize(address(_absoluteVote));
     }
-
 
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
     external
