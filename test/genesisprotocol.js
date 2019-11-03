@@ -1844,11 +1844,11 @@ contract('GenesisProtocol', accounts => {
     addTime = (await testSetup.genesisProtocol.proposals(proposalId)).secondsFromTimeOutTillExecuteBoosted.toNumber();
     //check the time is in a resonable range
     assert.equal(((addTime <= 18) && (addTime >=15)),true);
-    var expectedBounty = new web3.utils.BN((addTime*user2Stake/15000).toString());
+    var expectedBounty = new web3.utils.BN(Math.floor(addTime*user2Stake/15000).toString());
     assert.equal(tx.logs[3].event, "ExpirationCallBounty");
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
-    assert.equal(tx.logs[3].args._amount.toString(), expectedBounty.toString());
+    assert.equal(tx.logs[3].args._amount.toString().substring(0,15), expectedBounty.toString().substring(0,15));
     assert.equal((await testSetup.genesisProtocol.proposals(proposalId)).secondsFromTimeOutTillExecuteBoosted.toNumber(),addTime);
     var totalStakesLeftAfterCallBounty = (new web3.utils.BN(totalStakes)).sub(expectedBounty);
     assert.equal((await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address)).eq(totalStakesLeftAfterCallBounty),true);
