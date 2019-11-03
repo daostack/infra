@@ -158,7 +158,6 @@ export const checkVotesStatus = async function(proposalId, _votesStatus,votingMa
   }
 };
 
-
 function advanceBlock () {
   return promisify(web3.currentProvider.send.bind(web3.currentProvider))({
     jsonrpc: '2.0',
@@ -168,6 +167,9 @@ function advanceBlock () {
 }
 
 // Increases ganache time by the passed duration in seconds
+// Beware that due to the need of calling two separate ganache methods and rpc calls overhead
+// it's hard to increase time precisely to a target point so design your test to tolerate
+// small fluctuations from time to time.
 export const increaseTime = async function(duration) {
   if (!BN.isBN(duration)) {
     duration = new BN(duration);

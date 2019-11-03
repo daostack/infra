@@ -1773,28 +1773,35 @@ contract('GenesisProtocol', accounts => {
        } catch (ex) {
          helpers.assertVMException(ex);
        }
-    var addTime =15 ;
+    var addTime =15;
     await helpers.increaseTime(60+addTime);
     var tx = await testSetup.genesisProtocol.executeBoosted(proposalId);
-    var expectedBounty = (((addTime/15)/10)/100) * userStake;
+    var secondsFromTimeOutTillExecuteBoosted =
+    (await testSetup.genesisProtocol.proposals(proposalId)).secondsFromTimeOutTillExecuteBoosted;
+   // please note that due to the need of calling two separate ganache methods and rpc calls overhead
+   // it's hard to increase time precisely to a target point
+    assert.equal(((secondsFromTimeOutTillExecuteBoosted.toNumber() === addTime)||
+                  (secondsFromTimeOutTillExecuteBoosted.toNumber() === (addTime+1))),true);
+    var expectedBounty = Math.floor((((secondsFromTimeOutTillExecuteBoosted/15)/10)/100) * userStake);
     assert.equal(tx.logs[3].event, "ExpirationCallBounty");
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
     assert.equal(tx.logs[3].args._amount.toString(), expectedBounty);
-
     var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
     var redeemToken = redeemRewards[0];
-
-    var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
-    var secondsFromTimeOutTillExecuteBoosted = proposalInfo[11];
-    assert.equal(secondsFromTimeOutTillExecuteBoosted,addTime);
     var daoBounty =  new web3.utils.BN(minimumDaoBounty);
     var totalStakes = (new web3.utils.BN(userStake)).add(daoBounty);
     var totalStakesLeftAfterCallBounty = totalStakes.sub(new web3.utils.BN(expectedBounty));
     var _totalStakes = totalStakesLeftAfterCallBounty - daoBounty;
-    assert.equal(redeemToken.toString(),_totalStakes.toString());
+    if (secondsFromTimeOutTillExecuteBoosted.toNumber() === addTime) {
+        //increase time accurate
+        assert.equal(redeemToken.toString(),_totalStakes.toString());
+    } else {
+        assert.equal(redeemToken.toString().substring(0, 15),_totalStakes.toString().substring(0, 15));
+    }
+
     await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-    proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
+    var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
     assert.equal(proposalInfo.totalStakes,0);
     assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),0);
   });
