@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 
@@ -11,7 +11,6 @@ import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
  * The Reputation contract maintain a map of address to reputation value.
  * It provides an onlyOwner functions to mint and burn reputation _to (or _from) a specific address.
  */
-
 contract Reputation is Ownable {
 
     uint8 public decimals = 18;             //Number of decimals of the smallest unit
@@ -35,10 +34,10 @@ contract Reputation is Ownable {
       // `balances` is the map that tracks the balance of each address, in this
       //  contract when the balance changes the block number that the change
       //  occurred is also included in the map
-    mapping (address => Checkpoint[]) balances;
+    mapping (address => Checkpoint[]) public balances;
 
       // Tracks the history of the `totalSupply` of the reputation
-    Checkpoint[] totalSupplyHistory;
+    Checkpoint[] public totalSupplyHistory;
 
     /**
     * @dev initialize
@@ -49,6 +48,37 @@ contract Reputation is Ownable {
         Ownable.initialize(_owner);
     }
 
+      /// @notice Generates `_amount` reputation that are assigned to `_owner`
+      /// @param _user The address that will be assigned the new reputation
+      /// @param _amount The quantity of reputation generated
+      /// @return True if the reputation are generated correctly
+    function mint(address _user, uint256 _amount) external onlyOwner returns (bool) {
+        uint256 curTotalSupply = totalSupply();
+        require(curTotalSupply + _amount >= curTotalSupply, "total supply overflow"); // Check for overflow
+        uint256 previousBalanceTo = balanceOf(_user);
+        require(previousBalanceTo + _amount >= previousBalanceTo, "balace overflow"); // Check for overflow
+        updateValueAtNow(totalSupplyHistory, curTotalSupply + _amount);
+        updateValueAtNow(balances[_user], previousBalanceTo + _amount);
+        emit Mint(_user, _amount);
+        return true;
+    }
+
+      /// @notice Burns `_amount` reputation from `_owner`
+      /// @param _user The address that will lose the reputation
+      /// @param _amount The quantity of reputation to burn
+      /// @return True if the reputation are burned correctly
+    function burn(address _user, uint256 _amount) external onlyOwner returns (bool) {
+        uint256 curTotalSupply = totalSupply();
+        uint256 amountBurned = _amount;
+        uint256 previousBalanceFrom = balanceOf(_user);
+        if (previousBalanceFrom < amountBurned) {
+            amountBurned = previousBalanceFrom;
+        }
+        updateValueAtNow(totalSupplyHistory, curTotalSupply - amountBurned);
+        updateValueAtNow(balances[_user], previousBalanceFrom - amountBurned);
+        emit Burn(_user, amountBurned);
+        return true;
+    }
 
     /// @dev This function makes it easy to get the total number of reputation
     /// @return The total number of reputation
@@ -94,42 +124,9 @@ contract Reputation is Ownable {
         }
     }
 
-      /// @notice Generates `_amount` reputation that are assigned to `_owner`
-      /// @param _user The address that will be assigned the new reputation
-      /// @param _amount The quantity of reputation generated
-      /// @return True if the reputation are generated correctly
-    function mint(address _user, uint256 _amount) public onlyOwner returns (bool) {
-        uint256 curTotalSupply = totalSupply();
-        require(curTotalSupply + _amount >= curTotalSupply); // Check for overflow
-        uint256 previousBalanceTo = balanceOf(_user);
-        require(previousBalanceTo + _amount >= previousBalanceTo); // Check for overflow
-        updateValueAtNow(totalSupplyHistory, curTotalSupply + _amount);
-        updateValueAtNow(balances[_user], previousBalanceTo + _amount);
-        emit Mint(_user, _amount);
-        return true;
-    }
-
-      /// @notice Burns `_amount` reputation from `_owner`
-      /// @param _user The address that will lose the reputation
-      /// @param _amount The quantity of reputation to burn
-      /// @return True if the reputation are burned correctly
-    function burn(address _user, uint256 _amount) public onlyOwner returns (bool) {
-        uint256 curTotalSupply = totalSupply();
-        uint256 amountBurned = _amount;
-        uint256 previousBalanceFrom = balanceOf(_user);
-        if (previousBalanceFrom < amountBurned) {
-            amountBurned = previousBalanceFrom;
-        }
-        updateValueAtNow(totalSupplyHistory, curTotalSupply - amountBurned);
-        updateValueAtNow(balances[_user], previousBalanceFrom - amountBurned);
-        emit Burn(_user, amountBurned);
-        return true;
-    }
-
   ////////////////
   // Internal helper functions to query and set a value in a snapshot array
   ////////////////
-
       /// @dev `getValueAt` retrieves the number of reputation at a given block number
       /// @param checkpoints The history of values being queried
       /// @param _block The block number to retrieve the value at
@@ -152,7 +149,7 @@ contract Reputation is Ownable {
         uint256 max = checkpoints.length-1;
         while (max > min) {
             uint256 mid = (max + min + 1) / 2;
-            if (checkpoints[mid].fromBlock<=_block) {
+            if (checkpoints[mid].fromBlock <= _block) {
                 min = mid;
             } else {
                 max = mid-1;
@@ -166,7 +163,7 @@ contract Reputation is Ownable {
       /// @param checkpoints The history of data being updated
       /// @param _value The new number of reputation
     function updateValueAtNow(Checkpoint[] storage checkpoints, uint256 _value) internal {
-        require(uint128(_value) == _value); //check value is in the 128 bits bounderies
+        require(uint128(_value) == _value, "reputation overflow"); //check value is in the 128 bits bounderies
         if ((checkpoints.length == 0) || (checkpoints[checkpoints.length - 1].fromBlock < block.number)) {
             Checkpoint storage newCheckPoint = checkpoints[checkpoints.length++];
             newCheckPoint.fromBlock = uint128(block.number);

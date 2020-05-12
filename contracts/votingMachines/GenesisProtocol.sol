@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
 import "./GenesisProtocolLogic.sol";
@@ -106,11 +106,9 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     external
     votable(_proposalId)
     returns(bool) {
-        Proposal storage proposal = proposals[_proposalId];
-        Parameters memory params = parameters[proposal.paramsHash];
         address voter;
-        if (params.voteOnBehalf != address(0)) {
-            require(msg.sender == params.voteOnBehalf);
+        if (parameters.voteOnBehalf != address(0)) {
+            require(msg.sender == parameters.voteOnBehalf, "msg.sender is not authorized to vote");
             voter = _voter;
         } else {
             voter = msg.sender;
@@ -201,15 +199,6 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
                 proposals[_proposalId].stakes[YES],
                 proposals[_proposalId].stakes[NO]
         );
-    }
-
-  /**
-    * @dev getProposalOrganization return the organizationId for a given proposal
-    * @param _proposalId the ID of the proposal
-    * @return bytes32 organization identifier
-    */
-    function getProposalOrganization(bytes32 _proposalId) external view returns(bytes32) {
-        return (proposals[_proposalId].organizationId);
     }
 
     /**

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.17;
 
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
@@ -63,12 +63,12 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
         return true;
     }
 
-    function propose(uint256 _numOfChoices, bytes32 _paramsHash, address, address _proposer, address _organization)
+    function propose(uint256 _numOfChoices, address _proposer)
     external
     returns
     (bytes32)
     {
-        bytes32 proposalId = absoluteVote.propose(_numOfChoices, _paramsHash, _proposer, _organization);
+        bytes32 proposalId = absoluteVote.propose(_numOfChoices, _proposer);
         proposalsBlockNumbers[proposalId] = block.number;
 
         return proposalId;
