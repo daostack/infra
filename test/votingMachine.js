@@ -1,5 +1,4 @@
 const helpers = require('./helpers');
-const constants = require('./constants');
 const AbsoluteVote = artifacts.require('AbsoluteVote');
 const QuorumVote = artifacts.require('QuorumVote');
 const Reputation = artifacts.require('Reputation');
