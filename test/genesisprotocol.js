@@ -320,10 +320,12 @@ contract('GenesisProtocol', accounts => {
                                          testSetup.genesisProtocol);
       await checkVotesStatus(proposalId, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],testSetup.genesisProtocol);
       await checkIsVotable(proposalId, true,testSetup.genesisProtocol);
+      assert.equal(await testSetup.genesisProtocol.getNumberOfChoices(proposalId),2);
 
       // now lets vote Option 2 with a minority reputation
 
       await testSetup.genesisProtocol.vote(proposalId, 1,0,helpers.NULL_ADDRESS);
+      await testSetup.genesisProtocol.cancelVote(proposalId);
 
       winningVote = 1;
       var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
@@ -764,7 +766,8 @@ contract('GenesisProtocol', accounts => {
 
     var proposalId = await propose(testSetup);
     var tx = await stake(testSetup,proposalId,1,10,accounts[0]);
-
+    assert.equal(await testSetup.genesisProtocol.voteStake(proposalId,1),10);
+    assert.equal(await testSetup.genesisProtocol.isAbstainAllow(),false);
     assert.equal(tx.length, 1);
     assert.equal(tx[0].event, "Stake");
     assert.equal(tx[0].args._staker, accounts[0]);
@@ -963,6 +966,26 @@ contract('GenesisProtocol', accounts => {
     assert.equal(tx.length, 0);
   });
 
+  it("absolute majority on pre boosting proposal", async () => {
+    var thresholdConst = 1700; //1.7
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,60,thresholdConst,0,60,10,2);
+    var proposalId = await propose(testSetup);
+    //shift proposal to boosted phase
+    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalStateIndex],3);
+    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+
+    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+    await stake(testSetup,proposalId,YES,30,accounts[0]);
+    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalTotalStakesIndex],30); //totalStakes
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);  //state preboosted
+    var tx = await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
+    assert.equal(tx.logs[2].event, "GPExecuteProposal");
+    assert.equal(tx.logs[2].args._executionState, 3); //PreBoostedBarCrossed
+
+  });
+
   it("boost proposal", async () => {
     var thresholdConst = 1700; //1.7
     var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConst,0,60,10,2);
@@ -997,6 +1020,8 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalStatus[2].toNumber(),35);
     assert.equal(proposalInfo[proposalStateIndex],boostedState);
   });
+
+
 
   it("stake on boosted dual proposal is not allowed", async () => {
 
