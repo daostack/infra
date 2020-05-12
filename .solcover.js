@@ -4,7 +4,7 @@ module.exports = {
    grep: "@skip-on-coverage", // Find everything with this tag
    invert: true               // Run the grep's inverse set.
  },
-  skipFiles: ['test/','votingMachines/IntVoteInterface.sol'],
+  skipFiles: ['test/','votingMachines/IntVoteInterface.sol','token/'],
   providerOptions: {
     accounts: [
        {
