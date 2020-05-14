@@ -18,7 +18,7 @@ contract Reputation is Ownable {
     event Mint(address indexed _to, uint256 _amount);
     // Event indicating burning of reputation for an address.
     event Burn(address indexed _from, uint256 _amount);
-    uint256 constant private ZERO_VALUE =   0xffffffffffffffffffffffffffffffff00000000000000000000000000000000;
+    uint256 constant private ZERO_HALF_256 =  0xffffffffffffffffffffffffffffffff;
 
       /// @dev `Checkpoint` is the structure that attaches a block number to a
       ///  given value, the block number attached is the one that last changed the
@@ -153,7 +153,7 @@ contract Reputation is Ownable {
         }
         return checkpoints[min]>>128;
     }
-    
+
       /// @dev `updateValueAtNow` used to update the `balances` map and the
       ///  `totalSupplyHistory`
       /// @param checkpoints The history of data being updated
@@ -164,7 +164,7 @@ contract Reputation is Ownable {
             checkpoints.push(uint256(uint128(block.number)) | _value<<128);
         } else {
             checkpoints[checkpoints.length-1] =
-            uint256((checkpoints[checkpoints.length-1] & ZERO_VALUE) | (_value<<128));
+            uint256((checkpoints[checkpoints.length-1] & uint256(ZERO_HALF_256)) | (_value<<128));
         }
     }
 }
