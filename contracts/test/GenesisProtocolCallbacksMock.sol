@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.17;
 
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
 import "../votingMachines/ProposalExecuteInterface.sol";
@@ -19,8 +19,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         bytes32 indexed _proposalId,
         address indexed _organization,
         uint256 _numOfChoices,
-        address _proposer,
-        bytes32 _paramsHash
+        address _proposer
     );
 
     /**
@@ -59,23 +58,19 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         return _stakingToken.transfer(_beneficiary, _amount);
     }
 
-    function setParameters(uint[11] calldata _params, address _voteOnBehalf) external returns(bytes32) {
-        return genesisProtocol.setParameters(_params, _voteOnBehalf);
-    }
-
     function executeProposal(bytes32 _proposalId, int _decision) external returns(bool) {
         emit LogBytes32(_proposalId);
         emit LogInt(_decision);
         return true;
     }
 
-    function propose(uint256 _numOfChoices, bytes32 _paramsHash, address, address _proposer, address _organization)
+    function propose(uint256 _numOfChoices, address _proposer)
     external
     returns
     (bytes32)
     {
-        bytes32 proposalId = genesisProtocol.propose(_numOfChoices, _paramsHash, _proposer, _organization);
-        emit NewProposal(proposalId, address(this), _numOfChoices, _proposer, _paramsHash);
+        bytes32 proposalId = genesisProtocol.propose(_numOfChoices, _proposer);
+        emit NewProposal(proposalId, address(this), _numOfChoices, _proposer);
         proposalsBlockNumbers[proposalId] = block.number;
 
         return proposalId;

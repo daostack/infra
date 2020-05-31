@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
 import "./GenesisProtocolLogic.sol";
@@ -106,11 +106,9 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     external
     votable(_proposalId)
     returns(bool) {
-        Proposal storage proposal = proposals[_proposalId];
-        Parameters memory params = parameters[proposal.paramsHash];
         address voter;
-        if (params.voteOnBehalf != address(0)) {
-            require(msg.sender == params.voteOnBehalf);
+        if (parameters.voteOnBehalf != address(0)) {
+            require(msg.sender == parameters.voteOnBehalf, "msg.sender is not authorized to vote");
             voter = _voter;
         } else {
             voter = msg.sender;
@@ -163,8 +161,8 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
      *        uint256 reputation - amount of reputation committed by _voter to _proposalId
      */
     function voteInfo(bytes32 _proposalId, address _voter) external view returns(uint, uint) {
-        Voter memory voter = proposals[_proposalId].voters[_voter];
-        return (voter.vote, voter.reputation);
+        uint256 voter = proposals[_proposalId].voters[_voter];
+        return (voter >> VOTE_BIT_INDEX, uint256(uint128(voter)));
     }
 
     /**
@@ -203,15 +201,6 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
         );
     }
 
-  /**
-    * @dev getProposalOrganization return the organizationId for a given proposal
-    * @param _proposalId the ID of the proposal
-    * @return bytes32 organization identifier
-    */
-    function getProposalOrganization(bytes32 _proposalId) external view returns(bytes32) {
-        return (proposals[_proposalId].organizationId);
-    }
-
     /**
       * @dev getStaker return the vote and stake amount for a given proposal and staker
       * @param _proposalId the ID of the proposal
@@ -220,7 +209,9 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
       * @return uint256 amount
     */
     function getStaker(bytes32 _proposalId, address _staker) external view returns(uint256, uint256) {
-        return (proposals[_proposalId].stakers[_staker].vote, proposals[_proposalId].stakers[_staker].amount);
+        Staker memory staker = proposals[_proposalId].stakers[_staker];
+        return (uint256(uint8(staker.amount4BountyAndVote >> VOTE_BIT_INDEX)),
+                staker.amount);
     }
 
     /**

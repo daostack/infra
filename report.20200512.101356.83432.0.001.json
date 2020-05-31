@@ -1,0 +1,724 @@
+
+{
+  "header": {
+    "reportVersion": 2,
+    "event": "Allocation failed - JavaScript heap out of memory",
+    "trigger": "FatalError",
+    "filename": "report.20200512.101356.83432.0.001.json",
+    "dumpEventTime": "2020-05-12T10:13:56Z",
+    "dumpEventTimeStamp": "1589267636238",
+    "processId": 83432,
+    "threadId": null,
+    "cwd": "/Users/oren/daostack/infra",
+    "commandLine": [
+      "node",
+      "/Users/oren/daostack/infra/node_modules/.bin/eslint",
+      "."
+    ],
+    "nodejsVersion": "v12.16.2",
+    "wordSize": 64,
+    "arch": "x64",
+    "platform": "darwin",
+    "componentVersions": {
+      "node": "12.16.2",
+      "v8": "7.8.279.23-node.34",
+      "uv": "1.34.2",
+      "zlib": "1.2.11",
+      "brotli": "1.0.7",
+      "ares": "1.15.0",
+      "modules": "72",
+      "nghttp2": "1.40.0",
+      "napi": "5",
+      "llhttp": "2.0.4",
+      "http_parser": "2.9.3",
+      "openssl": "1.1.1e",
+      "cldr": "36.0",
+      "icu": "65.1",
+      "tz": "2019c",
+      "unicode": "12.1"
+    },
+    "release": {
+      "name": "node",
+      "lts": "Erbium",
+      "headersUrl": "https://nodejs.org/download/release/v12.16.2/node-v12.16.2-headers.tar.gz",
+      "sourceUrl": "https://nodejs.org/download/release/v12.16.2/node-v12.16.2.tar.gz"
+    },
+    "osName": "Darwin",
+    "osRelease": "19.4.0",
+    "osVersion": "Darwin Kernel Version 19.4.0: Wed Mar  4 22:28:40 PST 2020; root:xnu-6153.101.6~15/RELEASE_X86_64",
+    "osMachine": "x86_64",
+    "cpus": [
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 73782810,
+        "nice": 0,
+        "sys": 50744060,
+        "idle": 344713830,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 3521650,
+        "nice": 0,
+        "sys": 3446520,
+        "idle": 462072440,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 65259470,
+        "nice": 0,
+        "sys": 36696480,
+        "idle": 367087830,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 3524610,
+        "nice": 0,
+        "sys": 2922730,
+        "idle": 462592910,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 52626420,
+        "nice": 0,
+        "sys": 29254700,
+        "idle": 387162000,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 3610350,
+        "nice": 0,
+        "sys": 2624760,
+        "idle": 462804770,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 43517670,
+        "nice": 0,
+        "sys": 23515740,
+        "idle": 402009060,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 3621840,
+        "nice": 0,
+        "sys": 2364500,
+        "idle": 463053180,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 38478370,
+        "nice": 0,
+        "sys": 19665530,
+        "idle": 410897910,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 3526160,
+        "nice": 0,
+        "sys": 2134050,
+        "idle": 463378930,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 30307220,
+        "nice": 0,
+        "sys": 14175660,
+        "idle": 424558280,
+        "irq": 0
+      },
+      {
+        "model": "Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz",
+        "speed": 2600,
+        "user": 3455760,
+        "nice": 0,
+        "sys": 1942370,
+        "idle": 463640630,
+        "irq": 0
+      }
+    ],
+    "networkInterfaces": [
+      {
+        "name": "lo0",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "127.0.0.1",
+        "netmask": "255.0.0.0",
+        "family": "IPv4"
+      },
+      {
+        "name": "lo0",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "::1",
+        "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+        "family": "IPv6",
+        "scopeid": 0
+      },
+      {
+        "name": "lo0",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "fe80::1",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 1
+      },
+      {
+        "name": "en5",
+        "internal": false,
+        "mac": "ac:de:48:00:11:22",
+        "address": "fe80::aede:48ff:fe00:1122",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 5
+      },
+      {
+        "name": "en0",
+        "internal": false,
+        "mac": "38:f9:d3:45:e2:ec",
+        "address": "fe80::1810:4c26:5d0c:aff0",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 6
+      },
+      {
+        "name": "en0",
+        "internal": false,
+        "mac": "38:f9:d3:45:e2:ec",
+        "address": "2a00:a040:181:1066:1c7f:1150:ba0:fb6",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 0
+      },
+      {
+        "name": "en0",
+        "internal": false,
+        "mac": "38:f9:d3:45:e2:ec",
+        "address": "2a00:a040:181:1066:e950:9000:7636:45aa",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 0
+      },
+      {
+        "name": "en0",
+        "internal": false,
+        "mac": "38:f9:d3:45:e2:ec",
+        "address": "192.168.1.29",
+        "netmask": "255.255.255.0",
+        "family": "IPv4"
+      },
+      {
+        "name": "awdl0",
+        "internal": false,
+        "mac": "42:88:6e:33:69:c1",
+        "address": "fe80::4088:6eff:fe33:69c1",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 13
+      },
+      {
+        "name": "llw0",
+        "internal": false,
+        "mac": "42:88:6e:33:69:c1",
+        "address": "fe80::4088:6eff:fe33:69c1",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 14
+      },
+      {
+        "name": "utun0",
+        "internal": false,
+        "mac": "00:00:00:00:00:00",
+        "address": "fe80::2b0a:8c0c:d4d9:f36f",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 15
+      },
+      {
+        "name": "utun1",
+        "internal": false,
+        "mac": "00:00:00:00:00:00",
+        "address": "fe80::2af9:3e4c:3d8f:3557",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 16
+      }
+    ],
+    "host": "orens-MacBook-Pro.local"
+  },
+  "javascriptStack": {
+    "message": "No stack.",
+    "stack": [
+      "Unavailable."
+    ]
+  },
+  "nativeStack": [
+    {
+      "pc": "0x00000001001636d3",
+      "symbol": "report::TriggerNodeReport(v8::Isolate*, node::Environment*, char const*, char const*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > const&, v8::Local<v8::String>) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x0000000100084d5a",
+      "symbol": "node::OnFatalError(char const*, char const*) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x0000000100186477",
+      "symbol": "v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, bool) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x0000000100186417",
+      "symbol": "v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, bool) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x00000001003141c5",
+      "symbol": "v8::internal::Heap::FatalProcessOutOfMemory(char const*) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x0000000100315a3a",
+      "symbol": "v8::internal::Heap::RecomputeLimits(v8::internal::GarbageCollector) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000000010031246c",
+      "symbol": "v8::internal::Heap::PerformGarbageCollection(v8::internal::GarbageCollector, v8::GCCallbackFlags) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000000010031026e",
+      "symbol": "v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000000010031c13a",
+      "symbol": "v8::internal::Heap::AllocateRawWithLightRetry(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000000010031c1c1",
+      "symbol": "v8::internal::Heap::AllocateRawWithRetryOrFail(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x00000001002e9dfa",
+      "symbol": "v8::internal::Factory::NewFillerObject(int, bool, v8::internal::AllocationType, v8::internal::AllocationOrigin) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000000010063f028",
+      "symbol": "v8::internal::Runtime_AllocateInYoungGeneration(int, unsigned long*, v8::internal::Isolate*) [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000000010097d5b9",
+      "symbol": "Builtins_CEntry_Return1_DontSaveFPRegs_ArgvOnStack_NoBuiltinExit [/usr/local/bin/node]"
+    },
+    {
+      "pc": "0x000020b2a8c941f6",
+      "symbol": ""
+    }
+  ],
+  "javascriptHeap": {
+    "totalMemory": 2159894528,
+    "totalCommittedMemory": 2151733256,
+    "usedMemory": 2146133256,
+    "availableMemory": 48436424,
+    "memoryLimit": 2197815296,
+    "heapSpaces": {
+      "read_only_space": {
+        "memorySize": 262144,
+        "committedMemory": 33088,
+        "capacity": 32808,
+        "used": 32808,
+        "available": 0
+      },
+      "new_space": {
+        "memorySize": 10485760,
+        "committedMemory": 3538392,
+        "capacity": 5237280,
+        "used": 1141640,
+        "available": 4095640
+      },
+      "old_space": {
+        "memorySize": 2078679040,
+        "committedMemory": 2077786944,
+        "capacity": 2076318064,
+        "used": 2075135328,
+        "available": 1182736
+      },
+      "code_space": {
+        "memorySize": 954368,
+        "committedMemory": 889952,
+        "capacity": 850560,
+        "used": 850560,
+        "available": 0
+      },
+      "map_space": {
+        "memorySize": 1314816,
+        "committedMemory": 1286480,
+        "capacity": 878000,
+        "used": 878000,
+        "available": 0
+      },
+      "large_object_space": {
+        "memorySize": 67575808,
+        "committedMemory": 67575808,
+        "capacity": 67550376,
+        "used": 67550376,
+        "available": 0
+      },
+      "code_large_object_space": {
+        "memorySize": 622592,
+        "committedMemory": 622592,
+        "capacity": 544544,
+        "used": 544544,
+        "available": 0
+      },
+      "new_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 5237280,
+        "used": 0,
+        "available": 5237280
+      }
+    }
+  },
+  "resourceUsage": {
+    "userCpuSeconds": 68.1313,
+    "kernelCpuSeconds": 3.04624,
+    "cpuConsumptionPercent": 215.689,
+    "maxRss": 2336562872320,
+    "pageFaults": {
+      "IORequired": 29,
+      "IONotRequired": 678483
+    },
+    "fsActivity": {
+      "reads": 0,
+      "writes": 0
+    }
+  },
+  "libuv": [
+  ],
+  "workers": [
+  ],
+  "environmentVariables": {
+    "npm_config_save_dev": "",
+    "npm_config_legacy_bundling": "",
+    "npm_config_dry_run": "",
+    "npm_config_viewer": "man",
+    "npm_config_only": "",
+    "npm_config_commit_hooks": "true",
+    "npm_config_browser": "",
+    "npm_package_gitHead": "a58b887b3f914e6abf7f8a8afaf0510f50d67a8d",
+    "npm_config_also": "",
+    "npm_config_sign_git_commit": "",
+    "npm_config_rollback": "true",
+    "TERM_PROGRAM": "Apple_Terminal",
+    "NODE": "/usr/local/bin/node",
+    "npm_config_usage": "",
+    "npm_config_audit": "true",
+    "INIT_CWD": "/Users/oren/daostack/infra",
+    "npm_package_homepage": "https://daostack.io",
+    "npm_config_globalignorefile": "/Users/oren/.npm-global/etc/npmignore",
+    "npm_package_devDependencies_mocha": "^7.1.1",
+    "TERM": "xterm-256color",
+    "SHELL": "/bin/zsh",
+    "npm_config_shell": "/bin/zsh",
+    "npm_config_maxsockets": "50",
+    "npm_config_init_author_url": "",
+    "npm_package_devDependencies_rimraf": "^2.6.2",
+    "npm_config_shrinkwrap": "true",
+    "npm_config_parseable": "",
+    "npm_config_metrics_registry": "https://registry.npmjs.org/",
+    "npm_package_devDependencies_run_with_ganache": "^0.1.1",
+    "npm_package_devDependencies_eslint_config_standard": "^14.1.1",
+    "TMPDIR": "/var/folders/d2/r7xkn3fs5njdcn4jbl15bvzw0000gn/T/",
+    "npm_config_timing": "",
+    "npm_config_init_license": "ISC",
+    "npm_package_devDependencies_pm2": "^4.2.3",
+    "npm_package_scripts_lint": "eslint .",
+    "npm_config_if_present": "",
+    "TERM_PROGRAM_VERSION": "433",
+    "npm_package_devDependencies__nomiclabs_buidler_web3": "^1.3.3",
+    "npm_config_sign_git_tag": "",
+    "npm_config_init_author_email": "",
+    "npm_config_cache_max": "Infinity",
+    "npm_config_preid": "",
+    "npm_config_long": "",
+    "npm_config_local_address": "",
+    "npm_config_git_tag_version": "true",
+    "npm_config_cert": "",
+    "TERM_SESSION_ID": "E7997E14-36C3-499A-9D72-DCA396A1317D",
+    "npm_config_registry": "https://registry.npmjs.org/",
+    "npm_config_noproxy": "",
+    "npm_config_fetch_retries": "2",
+    "npm_package_dependencies__openzeppelin_upgrades": "2.5.3",
+    "npm_package_repository_url": "git+https://github.com/daostack/infra.git",
+    "ZSH": "/Users/oren/.oh-my-zsh",
+    "npm_config_versions": "",
+    "npm_config_message": "%s",
+    "npm_config_key": "",
+    "npm_package_readmeFilename": "README.md",
+    "npm_package_description": "Base layer DAO's components",
+    "USER": "oren",
+    "npm_package_license": "GPL-3.0",
+    "npm_config_globalconfig": "/Users/oren/.npm-global/etc/npmrc",
+    "npm_package_dependencies_ethereumjs_abi": "^0.6.5",
+    "npm_package_devDependencies_pug": "^2.0.0-rc.4",
+    "HOMEBREW_NO_ANALYTICS": "1",
+    "npm_config_prefer_online": "",
+    "npm_config_logs_max": "10",
+    "npm_config_always_auth": "",
+    "npm_package_devDependencies_bignumber_js": "^5.0.0",
+    "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.gi8hV4pXBt/Listeners",
+    "npm_package_devDependencies_eslint": "^6.8.0",
+    "npm_package_scripts_lint___fix": "eslint --fix .",
+    "__CF_USER_TEXT_ENCODING": "0x1F5:0x0:0x0",
+    "MYTHX_ETH_ADDRESS": "0x73Db6408abbea97C5DB8A2234C4027C315094936",
+    "npm_execpath": "/usr/local/lib/node_modules/npm/bin/npm-cli.js",
+    "npm_config_global_style": "",
+    "npm_config_cache_lock_retries": "10",
+    "npm_config_update_notifier": "true",
+    "npm_config_cafile": "",
+    "PAGER": "less",
+    "npm_package_dependencies__openzeppelin_contracts_ethereum_package": "2.5.0",
+    "npm_package_author_name": "DAOstack",
+    "npm_config_heading": "npm",
+    "npm_config_audit_level": "low",
+    "LSCOLORS": "Gxfxcxdxbxegedabagacad",
+    "npm_config_searchlimit": "20",
+    "npm_config_read_only": "",
+    "npm_config_offline": "",
+    "npm_config_fetch_retry_mintimeout": "10000",
+    "npm_package_devDependencies_default_options": "^1.0.0",
+    "npm_config_json": "",
+    "npm_config_access": "",
+    "npm_config_argv": "{\"remain\":[],\"cooked\":[\"run\",\"lint\"],\"original\":[\"run\",\"lint\"]}",
+    "PATH": "/usr/local/lib/node_modules/npm/node_modules/npm-lifecycle/node-gyp-bin:/Users/oren/daostack/infra/node_modules/.bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/MacGPG2/bin",
+    "npm_config_allow_same_version": "",
+    "npm_config_https_proxy": "",
+    "npm_config_engine_strict": "",
+    "npm_config_description": "true",
+    "_": "/Users/oren/daostack/infra/node_modules/.bin/eslint",
+    "LaunchInstanceID": "2D6B6424-4E3C-4B9C-B2F7-2A07076A8C66",
+    "npm_config_userconfig": "/Users/oren/.npmrc",
+    "npm_config_init_module": "/Users/oren/.npm-init.js",
+    "npm_package_keywords_4": "security",
+    "npm_config_cidr": "",
+    "npm_package_keywords_5": "daostack",
+    "npm_package_devDependencies_eslint_plugin_standard": "^4.0.1",
+    "npm_package_devDependencies_coveralls": "^3.0.11",
+    "PWD": "/Users/oren/daostack/infra",
+    "npm_config_user": "501",
+    "npm_config_node_version": "12.16.2",
+    "npm_package_bugs_url": "https://github.com/daostack/infra/issues",
+    "npm_package_author_url": "https://www.daostack.io",
+    "npm_package_keywords_6": "arc",
+    "MYTHX_PASSWORD": "H6o7c?WcwDW6JO",
+    "npm_lifecycle_event": "lint",
+    "npm_config_save": "true",
+    "npm_config_ignore_prepublish": "",
+    "npm_config_editor": "vi",
+    "npm_config_auth_type": "legacy",
+    "npm_package_keywords_0": "solidity",
+    "npm_package_repository_type": "git",
+    "npm_package_name": "@daostack/infra-experimental",
+    "npm_config_tag": "latest",
+    "npm_config_script_shell": "",
+    "npm_package_keywords_1": "ethereum",
+    "npm_package_devDependencies_eslint_plugin_import": "^2.20.2",
+    "npm_package_devDependencies__nomiclabs_buidler_truffle5": "^1.3.3",
+    "npm_config_progress": "true",
+    "npm_config_global": "",
+    "npm_config_before": "",
+    "npm_package_keywords_2": "smart",
+    "npm_package_devDependencies__babel_cli": "^7.2.3",
+    "npm_config_searchstaleness": "900",
+    "npm_config_optional": "true",
+    "npm_config_ham_it_up": "",
+    "npm_package_keywords_3": "contracts",
+    "XPC_FLAGS": "0x0",
+    "npm_config_save_prod": "",
+    "npm_config_force": "",
+    "npm_config_bin_links": "true",
+    "npm_config_searchopts": "",
+    "npm_package_engines_node": ">=10.16.3",
+    "npm_package_devDependencies_ethereumjs_abi": "^0.6.5",
+    "npm_config_node_gyp": "/usr/local/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
+    "npm_config_depth": "Infinity",
+    "npm_package_devDependencies_eslint_plugin_node": "^11.1.0",
+    "npm_config_sso_poll_frequency": "500",
+    "npm_config_rebuild_bundle": "true",
+    "npm_package_version": "0.0.1-rc.17",
+    "XPC_SERVICE_NAME": "0",
+    "npm_config_unicode": "true",
+    "HOME": "/Users/oren",
+    "SHLVL": "2",
+    "npm_config_fetch_retry_maxtimeout": "60000",
+    "npm_package_config_gasLimit": "6000000",
+    "npm_config_tag_version_prefix": "v",
+    "npm_config_strict_ssl": "true",
+    "npm_config_sso_type": "oauth",
+    "npm_config_scripts_prepend_node_path": "warn-only",
+    "npm_config_save_prefix": "^",
+    "npm_config_loglevel": "notice",
+    "npm_config_ca": "",
+    "npm_config_save_exact": "",
+    "npm_config_group": "20",
+    "npm_config_fetch_retry_factor": "10",
+    "npm_config_dev": "",
+    "npm_package_devDependencies_babel_eslint": "^10.1.0",
+    "npm_config_version": "",
+    "npm_config_prefer_offline": "",
+    "npm_config_cache_lock_stale": "60000",
+    "npm_package_devDependencies_eslint_plugin_promise": "^4.2.1",
+    "npm_config_otp": "",
+    "npm_config_cache_min": "10",
+    "npm_config_searchexclude": "",
+    "npm_config_cache": "/Users/oren/.npm",
+    "npm_package_scripts_coveralls": "buidler coverage && cat coverage/lcov.info | coveralls",
+    "LESS": "-R",
+    "LOGNAME": "oren",
+    "npm_lifecycle_script": "eslint .",
+    "npm_config_color": "true",
+    "npm_config_proxy": "",
+    "npm_config_package_lock": "true",
+    "LC_CTYPE": "UTF-8",
+    "npm_config_package_lock_only": "",
+    "npm_config_fund": "true",
+    "npm_config_save_optional": "",
+    "npm_package_devDependencies_uint32": "^0.2.1",
+    "npm_package_devDependencies__nomiclabs_buidler_solhint": "^1.3.3",
+    "npm_package_devDependencies__nomiclabs_buidler": "^1.3.3",
+    "npm_config_ignore_scripts": "",
+    "npm_config_user_agent": "npm/6.14.4 node/v12.16.2 darwin x64",
+    "npm_package_files_3": "migrations/",
+    "npm_config_cache_lock_wait": "10000",
+    "npm_package_files_2": "build/contracts/",
+    "npm_config_production": "",
+    "npm_package_files_1": "docs/",
+    "npm_config_send_metrics": "",
+    "npm_config_save_bundle": "",
+    "npm_package_files_0": "contracts/",
+    "npm_config_umask": "0022",
+    "npm_config_node_options": "",
+    "npm_config_init_version": "1.0.0",
+    "npm_package_devDependencies_solidity_coverage": "^0.7.0-beta.3",
+    "npm_package_devDependencies_promisify": "^0.0.3",
+    "npm_config_init_author_name": "",
+    "npm_config_git": "git",
+    "npm_config_scope": "",
+    "npm_package_files_6": "tsconfig.json",
+    "SECURITYSESSIONID": "186a6",
+    "npm_config_unsafe_perm": "true",
+    "npm_config_tmp": "/var/folders/d2/r7xkn3fs5njdcn4jbl15bvzw0000gn/T",
+    "npm_config_onload_script": "",
+    "npm_package_files_5": "truffle.js",
+    "npm_node_execpath": "/usr/local/bin/node",
+    "npm_config_link": "",
+    "npm_config_format_package_lock": "true",
+    "npm_config_prefix": "/Users/oren/.npm-global",
+    "npm_package_files_4": "test/"
+  },
+  "userLimits": {
+    "core_file_size_blocks": {
+      "soft": 0,
+      "hard": "unlimited"
+    },
+    "data_seg_size_kbytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "file_size_blocks": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_locked_memory_bytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_memory_size_kbytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "open_files": {
+      "soft": 49152,
+      "hard": "unlimited"
+    },
+    "stack_size_bytes": {
+      "soft": 8388608,
+      "hard": 67104768
+    },
+    "cpu_time_seconds": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_user_processes": {
+      "soft": 5568,
+      "hard": 8352
+    },
+    "virtual_memory_kbytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    }
+  },
+  "sharedObjects": [
+    "/usr/local/bin/node",
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libc++.1.dylib",
+    "/usr/lib/libobjc.A.dylib",
+    "/usr/lib/libfakelink.dylib",
+    "/usr/lib/libDiagnosticMessagesClient.dylib",
+    "/usr/lib/libicucore.A.dylib",
+    "/usr/lib/libz.1.dylib",
+    "/usr/lib/libc++abi.dylib",
+    "/usr/lib/system/libcache.dylib",
+    "/usr/lib/system/libcommonCrypto.dylib",
+    "/usr/lib/system/libcompiler_rt.dylib",
+    "/usr/lib/system/libcopyfile.dylib",
+    "/usr/lib/system/libcorecrypto.dylib",
+    "/usr/lib/system/libdispatch.dylib",
+    "/usr/lib/system/libdyld.dylib",
+    "/usr/lib/system/libkeymgr.dylib",
+    "/usr/lib/system/liblaunch.dylib",
+    "/usr/lib/system/libmacho.dylib",
+    "/usr/lib/system/libquarantine.dylib",
+    "/usr/lib/system/libremovefile.dylib",
+    "/usr/lib/system/libsystem_asl.dylib",
+    "/usr/lib/system/libsystem_blocks.dylib",
+    "/usr/lib/system/libsystem_c.dylib",
+    "/usr/lib/system/libsystem_configuration.dylib",
+    "/usr/lib/system/libsystem_coreservices.dylib",
+    "/usr/lib/system/libsystem_darwin.dylib",
+    "/usr/lib/system/libsystem_dnssd.dylib",
+    "/usr/lib/system/libsystem_featureflags.dylib",
+    "/usr/lib/system/libsystem_info.dylib",
+    "/usr/lib/system/libsystem_m.dylib",
+    "/usr/lib/system/libsystem_malloc.dylib",
+    "/usr/lib/system/libsystem_networkextension.dylib",
+    "/usr/lib/system/libsystem_notify.dylib",
+    "/usr/lib/system/libsystem_sandbox.dylib",
+    "/usr/lib/system/libsystem_secinit.dylib",
+    "/usr/lib/system/libsystem_kernel.dylib",
+    "/usr/lib/system/libsystem_platform.dylib",
+    "/usr/lib/system/libsystem_pthread.dylib",
+    "/usr/lib/system/libsystem_symptoms.dylib",
+    "/usr/lib/system/libsystem_trace.dylib",
+    "/usr/lib/system/libunwind.dylib",
+    "/usr/lib/system/libxpc.dylib"
+  ]
+}
