@@ -1,4 +1,4 @@
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.8;
 
 import "./AbsoluteVote.sol";
 import "./ProposalExecuteInterface.sol";
@@ -9,7 +9,7 @@ contract QuorumVote is AbsoluteVote {
     * @dev check if the proposal has been decided, and if so, execute the proposal
     * @param _proposalId the id of the proposal
     */
-    function execute(bytes32 _proposalId) external votable(_proposalId) returns(bool) {
+    function execute(bytes32 _proposalId) external votable(_proposalId) override returns(bool) {
         return _execute(_proposalId);
     }
 
@@ -17,7 +17,7 @@ contract QuorumVote is AbsoluteVote {
     * @dev check if the proposal has been decided, and if so, execute the proposal
     * @param _proposalId the id of the proposal
     */
-    function _execute(bytes32 _proposalId) internal votable(_proposalId) returns(bool) {
+    function _execute(bytes32 _proposalId) internal votable(_proposalId) override returns(bool) {
         Proposal storage proposal = proposals[_proposalId];
         uint256 totalReputation =
         VotingMachineCallbacksInterface(callbacks).getTotalReputationSupply(_proposalId);

@@ -10951,9 +10951,97 @@
       "urls": [
         "bzzr://447739ce479133ae9adbe9bab111451d737bc5669aacb58ae139e73e6eea6bef"
       ]
+    },
+    {
+      "path": "soljson-v0.6.8-nightly.2020.5.12+commit.b014b89e.js",
+      "version": "0.6.8",
+      "prerelease": "nightly.2020.5.12",
+      "build": "commit.b014b89e",
+      "longVersion": "0.6.8-nightly.2020.5.12+commit.b014b89e",
+      "keccak256": "0xf09d30abaa34a5b5740e0035bf211e7509297713dc95f3b4fc9af8d9c8727d8c",
+      "urls": [
+        "bzzr://7bb9fd69bbf0c27793d5d9c2b48b4a3d028bb7df30fcaa63e015154b562f21c5"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.8-nightly.2020.5.13+commit.aca70049.js",
+      "version": "0.6.8",
+      "prerelease": "nightly.2020.5.13",
+      "build": "commit.aca70049",
+      "longVersion": "0.6.8-nightly.2020.5.13+commit.aca70049",
+      "keccak256": "0x891a2cfb76256a3d06f10f42d4e5eef7481092425ee8c91c6a55129d5986ecb2",
+      "urls": [
+        "bzzr://dda1b5759181aeb7b1afbbee4d8f4192d3dce322b67ec717699ce8faef989ade"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.8-nightly.2020.5.14+commit.a6d0067b.js",
+      "version": "0.6.8",
+      "prerelease": "nightly.2020.5.14",
+      "build": "commit.a6d0067b",
+      "longVersion": "0.6.8-nightly.2020.5.14+commit.a6d0067b",
+      "keccak256": "0x9aab2d12b8311829476e08cca4c7111bac97cc79168541895b5f18dc1fcb21b4",
+      "urls": [
+        "bzzr://4a4b8c6b21aed96964ef91a687697ba71b6142934595e35024ba3e43037bce2c"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.8+commit.0bbfe453.js",
+      "version": "0.6.8",
+      "build": "commit.0bbfe453",
+      "longVersion": "0.6.8+commit.0bbfe453",
+      "keccak256": "0x537cefc0579dd9631ec952cae951b3df0a50a3e557b5638107a67275f7aacc07",
+      "urls": [
+        "bzzr://130bff47eed9546c6a4d019c6281896186cf2368b766b16bc49b3d489b6cdb92"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.9-nightly.2020.5.14+commit.33d8d838.js",
+      "version": "0.6.9",
+      "prerelease": "nightly.2020.5.14",
+      "build": "commit.33d8d838",
+      "longVersion": "0.6.9-nightly.2020.5.14+commit.33d8d838",
+      "keccak256": "0x804042004c0ce1cea569cef85c2b99afbdc996e40bc348cfce181a274da15405",
+      "urls": [
+        "bzzr://31f9d5d199c3896d1ae1c1cced515edf80eb0a4d6f19af0e3762024d3f25a0aa"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.9-nightly.2020.5.27+commit.57ac8628.js",
+      "version": "0.6.9",
+      "prerelease": "nightly.2020.5.27",
+      "build": "commit.57ac8628",
+      "longVersion": "0.6.9-nightly.2020.5.27+commit.57ac8628",
+      "keccak256": "0x6ba0ff7e6d68922d78f08a26db768146b3e14c923c8a5a9d641ffe73a25e18c2",
+      "urls": [
+        "bzzr://fa13db5f38913bee1475458757e651eeb701d3fc69bf6c4f050aa7527ae95901"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.9-nightly.2020.5.28+commit.ee8307ce.js",
+      "version": "0.6.9",
+      "prerelease": "nightly.2020.5.28",
+      "build": "commit.ee8307ce",
+      "longVersion": "0.6.9-nightly.2020.5.28+commit.ee8307ce",
+      "keccak256": "0x4948204fab7559aad90e269b073f13a199a401ec9f7a3b213f6c493e30034a52",
+      "urls": [
+        "bzzr://8f4e1b68422ebd17c2945e056f69cd78f024f7701c9e44ca482558c8ec1b90c7"
+      ]
+    },
+    {
+      "path": "soljson-v0.6.9-nightly.2020.5.29+commit.b01a1a36.js",
+      "version": "0.6.9",
+      "prerelease": "nightly.2020.5.29",
+      "build": "commit.b01a1a36",
+      "longVersion": "0.6.9-nightly.2020.5.29+commit.b01a1a36",
+      "keccak256": "0x33f252725a15d4cc5e80f32c0080cb8b52c1ca97d38eccddbbb09410010a0843",
+      "urls": [
+        "bzzr://e1a46adb108ebf6daab58b1166a85482bf6cfd654f8cb8fa01324401de05aea3"
+      ]
     }
   ],
   "releases": {
+    "0.6.8": "soljson-v0.6.8+commit.0bbfe453.js",
     "0.6.7": "soljson-v0.6.7+commit.b8d736ae.js",
     "0.6.6": "soljson-v0.6.6+commit.6c089d02.js",
     "0.6.5": "soljson-v0.6.5+commit.f956cc89.js",
@@ -11025,5 +11113,5 @@
     "0.1.2": "soljson-v0.1.2+commit.d0d36e3.js",
     "0.1.1": "soljson-v0.1.1+commit.6ff4cd6.js"
   },
-  "latestRelease": "0.6.7"
+  "latestRelease": "0.6.8"
 }

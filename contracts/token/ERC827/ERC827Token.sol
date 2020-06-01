@@ -1,4 +1,4 @@
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.8;
 
 import "./ERC827.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
@@ -11,7 +11,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol
  * methods to transfer value and data and execute calls in transfers and
  * approvals. Uses OpenZeppelin IERC20.
  */
-contract ERC827Token is ERC20, ERC827 {
+contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
   /**
    * @dev Addition to IERC20 token methods. It allows to
@@ -34,6 +34,7 @@ contract ERC827Token is ERC20, ERC827 {
     )
     public
     payable
+    override
     returns (bool)
     {
         require(_spender != address(this));
@@ -62,6 +63,7 @@ contract ERC827Token is ERC20, ERC827 {
     )
     public
     payable
+    override
     returns (bool)
     {
         require(_to != address(this));
@@ -89,7 +91,7 @@ contract ERC827Token is ERC20, ERC827 {
         uint256 _value,
         bytes memory _data
     )
-    public payable returns (bool)
+    public payable override returns (bool)
     {
         require(_to != address(this));
 
