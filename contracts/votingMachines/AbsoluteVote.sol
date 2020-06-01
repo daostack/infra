@@ -5,8 +5,10 @@ import "./IntVoteInterface.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "./VotingMachineCallbacksInterface.sol";
 import "./ProposalExecuteInterface.sol";
+import "./IntVoteInterfaceEvents.sol";
 
-contract AbsoluteVote is IntVoteInterface, Initializable {
+
+contract AbsoluteVote is IntVoteInterfaceEvents, IntVoteInterface, Initializable {
     using SafeMath for uint;
 
     struct Parameters {

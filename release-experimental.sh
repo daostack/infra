@@ -5,7 +5,7 @@ rm -rf ./build
 git checkout origin/arc-hive
 echo "npm install ..."
 npm i
-echo "truffle compile ..."
+echo "builder compile ..."
 npm buidler clean
 npx buidler compile
 # publish npm
