@@ -144,7 +144,7 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
      * @param _proposer address
      */
     function propose(uint256, address _proposer) external override returns(bytes32) {
-        return _propose(0, _proposer);
+        return _propose(_proposer);
     }
 
     /**
