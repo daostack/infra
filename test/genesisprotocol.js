@@ -23,27 +23,28 @@ const setupGenesisProtocolParams = async function(
                                             _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
                                             _daoBountyConst=1000,
-                                            _activationTime=0
+                                            _activationTime=0,
+                                            shouldInit=true
                                             ) {
-
-  await testSetup.genesisProtocol.initialize(testSetup.stakingToken.address,
-                                            [_queuedVoteRequiredPercentage,
-                                              _queuedVotePeriodLimit,
-                                              _boostedVotePeriodLimit,
-                                              _preBoostedVotePeriodLimit,
-                                              _thresholdConst,
-                                              _quietEndingPeriod,
-                                              _proposingRepReward,
-                                              _votersReputationLossRatio,
-                                              _minimumDaoBounty,
-                                              _daoBountyConst,
-                                              _activationTime],
-                                              voteOnBehalf,
-                                              _organization,
-                                              _callbacks,
-                                              _authorizedToPropose
-                                              );
-
+  if (shouldInit) {
+    await testSetup.genesisProtocol.initialize(testSetup.stakingToken.address,
+      [_queuedVoteRequiredPercentage,
+      _queuedVotePeriodLimit,
+      _boostedVotePeriodLimit,
+      _preBoostedVotePeriodLimit,
+      _thresholdConst,
+      _quietEndingPeriod,
+      _proposingRepReward,
+      _votersReputationLossRatio,
+      _minimumDaoBounty,
+      _daoBountyConst,
+      _activationTime],
+      voteOnBehalf,
+      _organization,
+      _callbacks,
+      _authorizedToPropose
+    );
+  }
 };
 
 var YES,NO;
@@ -61,7 +62,8 @@ const setup = async function (accounts,
                               _minimumDaoBounty=15,
                               _daoBountyConst=1000,
                               _activationTime=0,
-                              _authorizedToPropose = helpers.NULL_ADDRESS) {
+                              _authorizedToPropose = helpers.NULL_ADDRESS,
+                              shouldInit=true) {
    var testSetup = new helpers.TestSetup();
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],web3.utils.toWei(((new BigNumber(2)).pow(200)).toString(10)));
    testSetup.genesisProtocol = await GenesisProtocol.new();
@@ -96,7 +98,8 @@ const setup = async function (accounts,
                                                                      _votersReputationLossRatio,
                                                                      _minimumDaoBounty,
                                                                      _daoBountyConst,
-                                                                     _activationTime);
+                                                                     _activationTime,
+                                                                     shouldInit);
     YES = await testSetup.genesisProtocol.YES();
     YES = YES.toNumber();
     NO = await testSetup.genesisProtocol.NO();
@@ -591,6 +594,50 @@ contract('GenesisProtocol', accounts => {
     await checkVoteInfo(proposalId, accounts[0], [2, testSetup.reputationArray[0]],testSetup.genesisProtocol);
     await checkVotesStatus(proposalId, [0,0, testSetup.reputationArray[0]],testSetup.genesisProtocol);
     await checkIsVotable(proposalId,true,testSetup.genesisProtocol);
+  });
+
+  it("Cannot vote none existing options", async function() {
+    var testSetup = await setup(accounts);
+
+    var proposalId = await propose(testSetup);
+
+    try {
+      // Option 0
+      await testSetup.genesisProtocol.vote(proposalId, 0,0,helpers.NULL_ADDRESS, { from: accounts[1] });
+      assert(false, "Shouldn't be able to vote too low option");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
+
+    try {
+      // Option 3
+      await testSetup.genesisProtocol.vote(proposalId, 3,0,helpers.NULL_ADDRESS, { from: accounts[1] });
+      assert(false, "Shouldn't be able to vote too high option");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
+  });
+
+  it("Cannot stake none existing options", async function() {
+    var testSetup = await setup(accounts);
+
+    var proposalId = await propose(testSetup);
+    await testSetup.stakingToken.approve(testSetup.genesisProtocol.address,10);
+    try {
+      // Option 0
+      await testSetup.genesisProtocol.stake(proposalId,0,10);
+      assert(false, "Shouldn't be able to vote too low option");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
+
+    try {
+      // Option 3
+      await testSetup.genesisProtocol.stake(proposalId,3,10);
+      assert(false, "Shouldn't be able to vote too high option");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
   });
 
   it("cannot re vote", async function() {
@@ -1507,6 +1554,32 @@ contract('GenesisProtocol', accounts => {
     await helpers.increaseTime(61); //increase time
     assert.equal(await threshold(testSetup),1);
 
+  });
+
+  it("propose without initialize", async () => {
+    var testSetup = await setup(
+      accounts,
+      helpers.NULL_ADDRESS,
+      50,
+      60,
+      60,
+      0,
+      2000,
+      0,
+      60,
+      10,
+      15,
+      1000,
+      0,
+      helpers.NULL_ADDRESS,
+      false
+    );
+    try {
+      await propose(testSetup);
+      assert(false, 'cannot propose before voting machine is initialized');
+    } catch (ex) {
+      helpers.assertVMException(ex);
+    }
   });
 
   it("set organization ", async () => {
