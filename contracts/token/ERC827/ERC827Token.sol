@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol
  * approvals. Uses OpenZeppelin IERC20.
  */
 contract ERC827Token is ERC20UpgradeSafe, ERC827 {
-
+  /* solhint-disable reason-string */
   /**
    * @dev Addition to IERC20 token methods. It allows to
    * approve the transfer of value and execute a call with the sent data.
@@ -164,4 +164,5 @@ contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
         return true;
     }
+      /* solhint-enable reason-string */
 }
