@@ -1186,6 +1186,26 @@ contract('GenesisProtocol', accounts => {
     assert.equal(await testSetup.stakingToken.balanceOf(testSetup.genesisProtocol.address),0);
   });
 
+  it("redeem expieredInQue ", async () => {
+
+    var testSetup = await setup(accounts);
+    var proposalId = await propose(testSetup);
+    await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
+    assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
+    var accounts0Balance = await testSetup.stakingToken.balanceOf(accounts[0]);
+    await stake(testSetup,proposalId,YES,10,accounts[0]);
+    await helpers.increaseTime(61);
+    await testSetup.genesisProtocol.execute(proposalId);
+    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo.state,1);//expieredInQue
+    var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
+    var redeemToken = redeemRewards[0].toNumber();
+    assert.equal(redeemToken,10);
+    await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
+    assert.equal((await testSetup.stakingToken.balanceOf(accounts[0])).toString(),accounts0Balance.toString());
+  });
+
+
   it("redeem without execution should revert", async () => {
 
     var testSetup = await setup(accounts);
