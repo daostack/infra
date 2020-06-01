@@ -10,6 +10,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol
  * methods to transfer value and data and execute calls in transfers and
  * approvals.
  */
+// solhint-disable-next-line indent
 abstract contract ERC827 is IERC20 {
 
     function approveAndCall(address _spender, uint256 _value, bytes memory _data) public payable virtual returns(bool);
