@@ -368,7 +368,8 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents, Initializable {
             proposal.daoBountyRemain = proposal.daoBountyRemain.sub(potentialAmount);
             require(
             VotingMachineCallbacksInterface(callbacks)
-            .stakingTokenTransfer(stakingToken, _beneficiary, potentialAmount, _proposalId));
+            .stakingTokenTransfer(stakingToken, _beneficiary, potentialAmount, _proposalId),
+            "staking token transfer failed");
             redeemedAmount = potentialAmount;
             emit RedeemDaoBounty(_proposalId, organization, _beneficiary, redeemedAmount);
         }
