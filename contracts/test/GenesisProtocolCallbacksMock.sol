@@ -35,7 +35,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     }
 
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
-    external
+    public
     onlyOwner
     returns(bool)
     {
@@ -43,7 +43,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     }
 
     function burnReputation(uint256 _amount, address _beneficiary, bytes32)
-    external
+    public
     onlyOwner
     returns(bool)
     {
@@ -51,7 +51,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     }
 
     function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
-    external
+    public
     onlyOwner
     returns(bool)
     {
@@ -88,19 +88,19 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         proposalsBlockNumbers[_proposalId] = block.number;
     }
 
-    function getTotalReputationSupply(bytes32 _proposalId) external view returns(uint256) {
+    function getTotalReputationSupply(bytes32 _proposalId) public view returns(uint256) {
         return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
     function balanceOfStakingToken(IERC20 _stakingToken, bytes32)
-    external
+    public
     view
     returns(uint256)
     {
         return _stakingToken.balanceOf(address(this));
     }
 
-    function reputationOf(address _owner, bytes32 _proposalId) external view returns(uint256) {
+    function reputationOf(address _owner, bytes32 _proposalId) public view returns(uint256) {
         return reputation.balanceOfAt(_owner, proposalsBlockNumbers[_proposalId]);
     }
 
