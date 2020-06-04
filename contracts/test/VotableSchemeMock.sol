@@ -43,36 +43,6 @@ contract VotableSchemeMock is Debug, VotingMachineCallbacksInterface, ProposalEx
         stakingToken = _stakingToken;
     }
 
-    function mintReputation(uint256 _amount, address _beneficiary, bytes32)
-    public
-    returns(bool)
-    {
-        require(msg.sender == address(this), "Only the scheme can call this method");
-        return reputation.mint(_beneficiary, _amount);
-    }
-
-    function burnReputation(uint256 _amount, address _beneficiary, bytes32)
-    public
-    returns(bool)
-    {
-        require(msg.sender == address(this), "Only the scheme can call this method");
-        return reputation.burn(_beneficiary, _amount);
-    }
-
-    function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
-    public
-    returns(bool)
-    {
-        require(msg.sender == address(this), "Only the scheme can call this method");
-        return _stakingToken.transfer(_beneficiary, _amount);
-    }
-
-    function executeProposal(bytes32 _proposalId, int _decision) external returns(bool) {
-        emit LogBytes32(_proposalId);
-        emit LogInt(_decision);
-        return true;
-    }
-
     function proposeTest(uint256 _numOfChoices, address _proposer)
     external
     returns
@@ -95,6 +65,36 @@ contract VotableSchemeMock is Debug, VotingMachineCallbacksInterface, ProposalEx
 
     function setProposal(bytes32 _proposalId) external returns(bool) {
         proposalsBlockNumbers[_proposalId] = block.number;
+    }
+
+    function executeProposal(bytes32 _proposalId, int _decision) external returns(bool) {
+        emit LogBytes32(_proposalId);
+        emit LogInt(_decision);
+        return true;
+    }
+
+    function mintReputation(uint256 _amount, address _beneficiary, bytes32)
+    public
+    returns(bool)
+    {
+        require(msg.sender == address(this), "Only the scheme can call this method");
+        return reputation.mint(_beneficiary, _amount);
+    }
+
+    function burnReputation(uint256 _amount, address _beneficiary, bytes32)
+    public
+    returns(bool)
+    {
+        require(msg.sender == address(this), "Only the scheme can call this method");
+        return reputation.burn(_beneficiary, _amount);
+    }
+
+    function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
+    public
+    returns(bool)
+    {
+        require(msg.sender == address(this), "Only the scheme can call this method");
+        return _stakingToken.transfer(_beneficiary, _amount);
     }
 
     function getTotalReputationSupply(bytes32 _proposalId) public view returns(uint256) {

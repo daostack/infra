@@ -138,6 +138,30 @@ contract GenesisProtocolLogic is IntVoteInterface, Initializable {
     uint256 constant private MAX_BOOSTED_PROPOSALS = 4096;
 
     /**
+      * @dev executeBoosted try to execute a boosted or QuietEndingPeriod proposal if it is expired
+      * it rewards the msg.sender with P % of the proposal's upstakes upon a successful call to this function.
+      * P = t/150, where t is the number of seconds passed since the the proposal's timeout.
+      * P is capped by 10%.
+      * @param _proposalId the id of the proposal
+      * @return uint256 expirationCallBounty the bounty amount for the expiration call
+     */
+    function executeBoosted(bytes32 _proposalId) external returns(uint256 expirationCallBounty) {
+        Proposal storage proposal = proposals[_proposalId];
+        require(proposal.state == ProposalState.Boosted || proposal.state == ProposalState.QuietEndingPeriod,
+        "proposal state in not Boosted nor QuietEndingPeriod");
+        require(_execute(_proposalId), "proposal need to expire");
+
+        proposal.secondsFromTimeOutTillExecuteBoosted =
+        // solhint-disable-next-line not-rely-on-time
+        now.sub(proposal.currentBoostedVotePeriodLimit.add(proposal.times[1]));
+
+        expirationCallBounty = calcExecuteCallBounty(_proposalId);
+        proposal.totalStakes = proposal.totalStakes.sub(expirationCallBounty);
+        require(stakingToken.transfer(msg.sender, expirationCallBounty), "transfer to msg.sender failed");
+        emit ExpirationCallBounty(_proposalId, msg.sender, expirationCallBounty);
+    }
+
+    /**
     * @dev initialize
     * @param _stakingToken stakingToken
     * @param _params a parameters array
@@ -258,30 +282,6 @@ contract GenesisProtocolLogic is IntVoteInterface, Initializable {
 
         emit NewProposal(proposalId, organization, NUM_OF_CHOICES, _proposer);
         return proposalId;
-    }
-
-    /**
-      * @dev executeBoosted try to execute a boosted or QuietEndingPeriod proposal if it is expired
-      * it rewards the msg.sender with P % of the proposal's upstakes upon a successful call to this function.
-      * P = t/150, where t is the number of seconds passed since the the proposal's timeout.
-      * P is capped by 10%.
-      * @param _proposalId the id of the proposal
-      * @return uint256 expirationCallBounty the bounty amount for the expiration call
-     */
-    function executeBoosted(bytes32 _proposalId) external returns(uint256 expirationCallBounty) {
-        Proposal storage proposal = proposals[_proposalId];
-        require(proposal.state == ProposalState.Boosted || proposal.state == ProposalState.QuietEndingPeriod,
-        "proposal state in not Boosted nor QuietEndingPeriod");
-        require(_execute(_proposalId), "proposal need to expire");
-
-        proposal.secondsFromTimeOutTillExecuteBoosted =
-        // solhint-disable-next-line not-rely-on-time
-        now.sub(proposal.currentBoostedVotePeriodLimit.add(proposal.times[1]));
-
-        expirationCallBounty = calcExecuteCallBounty(_proposalId);
-        proposal.totalStakes = proposal.totalStakes.sub(expirationCallBounty);
-        require(stakingToken.transfer(msg.sender, expirationCallBounty), "transfer to msg.sender failed");
-        emit ExpirationCallBounty(_proposalId, msg.sender, expirationCallBounty);
     }
 
     /**
