@@ -1,4 +1,4 @@
-pragma solidity ^0.5.17;
+pragma solidity 0.5.17;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
 import "./GenesisProtocolLogic.sol";
@@ -22,6 +22,15 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     ));
 
     mapping(address=>uint256) public stakesNonce; //stakes Nonce
+
+    /**
+     * @dev Constructor
+     */
+    constructor(IERC20 _stakingToken)
+    public
+    // solhint-disable-next-line no-empty-blocks
+    GenesisProtocolLogic(_stakingToken) {
+    }
 
     /**
      * @dev staking function
@@ -88,7 +97,7 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
         address staker = delegationDigest.recover(_signature);
         //a garbage staker address due to wrong signature will revert due to lack of approval and funds.
         require(staker != address(0), "staker address cannot be 0");
-        require(stakesNonce[staker] == _nonce);
+        require(stakesNonce[staker] == _nonce, "wrong nonce");
         stakesNonce[staker] = stakesNonce[staker].add(1);
         return _stake(_proposalId, _vote, _amount, staker);
     }
@@ -106,9 +115,11 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     external
     votable(_proposalId)
     returns(bool) {
+        Proposal storage proposal = proposals[_proposalId];
+        Parameters memory params = parameters[proposal.paramsHash];
         address voter;
-        if (parameters.voteOnBehalf != address(0)) {
-            require(msg.sender == parameters.voteOnBehalf, "msg.sender is not authorized to vote");
+        if (params.voteOnBehalf != address(0)) {
+            require(msg.sender == params.voteOnBehalf, "voter is not authorized");
             voter = _voter;
         } else {
             voter = msg.sender;
@@ -199,6 +210,15 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
                 proposals[_proposalId].stakes[YES],
                 proposals[_proposalId].stakes[NO]
         );
+    }
+
+  /**
+    * @dev getProposalOrganization return the organizationId for a given proposal
+    * @param _proposalId the ID of the proposal
+    * @return bytes32 organization identifier
+    */
+    function getProposalOrganization(bytes32 _proposalId) external view returns(bytes32) {
+        return (proposals[_proposalId].organizationId);
     }
 
     /**

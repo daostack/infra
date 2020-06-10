@@ -1,4 +1,5 @@
 const helpers = require('./helpers');
+const constants = require('./constants');
 const AbsoluteVote = artifacts.require('AbsoluteVote');
 const QuorumVote = artifacts.require('QuorumVote');
 const Reputation = artifacts.require('Reputation');
@@ -23,7 +24,8 @@ const setupGenesisProtocol = async function (accounts,_voteOnBehalf = helpers.NU
                                               _activationTime=0) {
    var testSetup = new helpers.TestSetup();
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],3000);
-   testSetup.genesisProtocol = await GenesisProtocol.new();
+   testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
+
    testSetup.reputationArray = [20, 10, 70 ];
    testSetup.org = {};
    //let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
@@ -53,13 +55,17 @@ const setupGenesisProtocol = async function (accounts,_voteOnBehalf = helpers.NU
                                          _votersReputationLossRatio,
                                          _minimumDaoBounty,
                                          _daoBountyConst,
-                                         _activationTime,
-                                         accounts[0]);
+                                         _activationTime);
 
 
    return testSetup;
 };
 
+
+class GenesisProtocolParams {
+  constructor() {
+  }
+}
 
 const setupGenesisProtocolParams = async function(
                                             testSetup,
@@ -74,26 +80,32 @@ const setupGenesisProtocolParams = async function(
                                             _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
                                             _daoBountyConst=10,
-                                            _activationTime=0,
-                                            _authorizedToPropose
+                                            _activationTime=0
                                             ) {
-  await testSetup.genesisProtocol.initialize(testSetup.stakingToken.address,
-                                            [_queuedVoteRequiredPercentage,
-                                              _queuedVotePeriodLimit,
-                                              _boostedVotePeriodLimit,
-                                              _preBoostedVotePeriodLimit,
-                                              _thresholdConst,
-                                              _quietEndingPeriod,
-                                              _proposingRepReward,
-                                              _votersReputationLossRatio,
-                                              _minimumDaoBounty,
-                                              _daoBountyConst,
-                                              _activationTime],
-                                              voteOnBehalf,
-                                              testSetup.genesisProtocolCallbacks.address,
-                                              testSetup.genesisProtocolCallbacks.address,
-                                              _authorizedToPropose
-                                              );
+  var genesisProtocolParams = new GenesisProtocolParams();
+  await testSetup.genesisProtocolCallbacks.setParameters([_queuedVoteRequiredPercentage,
+                                                          _queuedVotePeriodLimit,
+                                                          _boostedVotePeriodLimit,
+                                                          _preBoostedVotePeriodLimit,
+                                                          _thresholdConst,
+                                                          _quietEndingPeriod,
+                                                          _proposingRepReward,
+                                                          _votersReputationLossRatio,
+                                                          _minimumDaoBounty,
+                                                          _daoBountyConst,
+                                                         _activationTime],voteOnBehalf);
+  genesisProtocolParams.paramsHash = await testSetup.genesisProtocol.getParametersHash([_queuedVoteRequiredPercentage,
+                                                          _queuedVotePeriodLimit,
+                                                          _boostedVotePeriodLimit,
+                                                          _preBoostedVotePeriodLimit,
+                                                          _thresholdConst,
+                                                          _quietEndingPeriod,
+                                                          _proposingRepReward,
+                                                          _votersReputationLossRatio,
+                                                          _minimumDaoBounty,
+                                                          _daoBountyConst,
+                                                          _activationTime],voteOnBehalf);
+  return genesisProtocolParams;
 };
 
 
@@ -102,23 +114,15 @@ contract('VotingMachine', (accounts)=>{
     const absolute = await AbsoluteVote.new();
     const quorum = await QuorumVote.new();
 
-    await absolute.initialize(50,
-                                  helpers.NULL_ADDRESS,
-                                  accounts[0],
-                                  accounts[0],
-                                  accounts[0]);
-
-
+    const absoluteParams = await absolute.setParameters.call(50,helpers.NULL_ADDRESS);
+    await absolute.setParameters(50,helpers.NULL_ADDRESS);
     var testSetup = await setupGenesisProtocol(accounts);
-    await quorum.initialize(50,
-                                  helpers.NULL_ADDRESS,
-                                  accounts[0],
-                                  accounts[0],
-                                  accounts[0]);
-    const absoluteProposalId = await absolute.propose(5,accounts[0]);
+    const quoromParams = await quorum.setParameters.call(50,helpers.NULL_ADDRESS);
+    await quorum.setParameters(50,helpers.NULL_ADDRESS);
+    const absoluteProposalId = await absolute.propose(5, absoluteParams,accounts[0],helpers.NULL_ADDRESS);
 
-    const genesisProposalId = await testSetup.genesisProtocol.propose(2,accounts[0]);
-    const quorumProposalId = await quorum.propose(5,accounts[0]);
+    const genesisProposalId = await testSetup.genesisProtocol.propose(2, testSetup.genesisProtocolParams.paramsHash,accounts[0],helpers.NULL_ADDRESS);
+    const quorumProposalId = await quorum.propose(5, quoromParams,accounts[0],helpers.NULL_ADDRESS);
 
     assert(absoluteProposalId !== genesisProposalId, 'AbsoluteVote gives the same proposalId as GenesisProtocol');
     assert(genesisProposalId !== quorumProposalId, 'GenesisProtocol gives the same proposalId as QuorumVote');

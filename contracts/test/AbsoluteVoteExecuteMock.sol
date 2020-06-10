@@ -1,4 +1,4 @@
-pragma solidity ^0.5.17;
+pragma solidity ^0.5.11;
 
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
@@ -21,17 +21,6 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
         address _proposer,
         bytes32 _paramsHash
     );
-
-    /**
-    * @dev initialize
-    */
-    function initialize(Reputation _reputation, AbsoluteVote _absoluteVote)
-    external
-    initializer {
-        reputation = _reputation;
-        absoluteVote = _absoluteVote;
-        Ownable.initialize(address(_absoluteVote));
-    }
 
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
     external
@@ -63,12 +52,12 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
         return true;
     }
 
-    function propose(uint256 _numOfChoices, address _proposer)
+    function propose(uint256 _numOfChoices, bytes32 _paramsHash, address, address _proposer, address _organization)
     external
     returns
     (bytes32)
     {
-        bytes32 proposalId = absoluteVote.propose(_numOfChoices, _proposer);
+        bytes32 proposalId = absoluteVote.propose(_numOfChoices, _paramsHash, _proposer, _organization);
         proposalsBlockNumbers[proposalId] = block.number;
 
         return proposalId;
@@ -100,6 +89,17 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     returns(uint256)
     {
         return _stakingToken.balanceOf(address(this));
+    }
+
+    /**
+    * @dev initialize
+    */
+    function initialize(Reputation _reputation, AbsoluteVote _absoluteVote)
+    public
+    initializer {
+        reputation = _reputation;
+        absoluteVote = _absoluteVote;
+        Ownable.initialize(address(_absoluteVote));
     }
 
 }
