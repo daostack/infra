@@ -342,6 +342,13 @@ contract('GenesisProtocol', accounts => {
       // now lets vote Option 2 with a minority reputation
 
       await testSetup.genesisProtocol.vote(proposalId, 1,0,helpers.NULL_ADDRESS);
+      //cancel vote do nothing
+      await testSetup.genesisProtocol.cancelVote(proposalId);
+      assert.equal(await testSetup.genesisProtocol.getNumberOfChoices(proposalId),2);
+      assert.equal(await testSetup.genesisProtocol.voteStake(proposalId,1),0);
+      assert.equal(await testSetup.genesisProtocol.isAbstainAllow(),false);
+
+
 
       winningVote = 1;
       var proposalStatus = await testSetup.genesisProtocol.proposalStatus(proposalId);
@@ -964,6 +971,7 @@ contract('GenesisProtocol', accounts => {
 
     //add more stake on the same vote
     tx = await stake(testSetup,proposalId,YES,10,accounts[0]);
+    assert.equal(await testSetup.genesisProtocol.voteStake(proposalId,YES),20);
     assert.equal(tx[0].event, "Stake");
     assert.equal(tx[0].args._staker, accounts[0]);
     assert.equal(tx[0].args._vote, 1);
@@ -972,7 +980,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(staker[0],1);
     assert.equal(staker[1],20);
     //try to stake with different vote as before
-    tx = await stake(testSetup,proposalId,2,10,accounts[0]);
+    await stake(testSetup,proposalId,2,10,accounts[0]);
     staker = await testSetup.genesisProtocol.getStaker(proposalId,accounts[0]);
     assert.equal(staker[0],1);
     assert.equal(staker[1],20);

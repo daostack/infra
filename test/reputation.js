@@ -1,6 +1,8 @@
 const helpers = require('./helpers');
 
 var Reputation = artifacts.require("./Reputation.sol");
+const ReputationTestHelper = artifacts.require("./ReputationTestHelper.sol");
+
 var reputation;
 contract('Reputation', accounts => {
   beforeEach( async function() {
@@ -256,6 +258,24 @@ contract('Reputation', accounts => {
         assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber),rep1+rep1);
         assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber-1),rep1);
         assert.equal (await reputation.balanceOfAt(accounts[3],tx.receipt.blockNumber),0);
+
+    });
+
+    it("multible mint at the same block ", async () => {
+        var reputationTestHelper = await ReputationTestHelper.new(reputation.address);
+
+        await reputation.transferOwnership(reputationTestHelper.address, {from:accounts[0]});
+        var rep = 10;
+        var times =  3;
+
+        await reputationTestHelper.multipleMint(accounts[1], rep,times);
+        assert.equal (await reputation.totalSupply(),rep*times);
+        assert.equal (await reputation.balanceOf(accounts[1]),rep*times);
+
+
+        await reputationTestHelper.multipleBurn(accounts[1], rep, 2);
+        assert.equal (await reputation.totalSupply(),rep);
+        assert.equal (await reputation.balanceOf(accounts[1]),rep);
 
     });
 });
