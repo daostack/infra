@@ -278,4 +278,16 @@ contract('Reputation', accounts => {
         assert.equal (await reputation.balanceOf(accounts[1]),rep);
 
     });
+
+    it("balanceOfAt before first mint should be 0 ", async () => {
+        const rep1 = Math.floor(Math.random() * 1e6);
+        var tx = await reputation.mint(accounts[1], rep1, { from: accounts[0] });
+        assert.equal (await reputation.totalSupply(),rep1);
+        assert.equal (await reputation.totalSupplyAt(tx.receipt.blockNumber),rep1);
+        assert.equal (await reputation.totalSupplyAt(tx.receipt.blockNumber-1),0);
+
+        assert.equal (await reputation.balanceOf(accounts[1],tx.receipt.blockNumber),rep1);
+        assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber),rep1);
+        assert.equal (await reputation.balanceOfAt(accounts[1],tx.receipt.blockNumber-1),0);
+    });
 });
