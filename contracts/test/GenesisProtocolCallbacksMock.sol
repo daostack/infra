@@ -19,20 +19,9 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         bytes32 indexed _proposalId,
         address indexed _organization,
         uint256 _numOfChoices,
-        address _proposer
+        address _proposer,
+        bytes32 _paramsHash
     );
-
-    /**
-    * @dev initialize
-    */
-    function initialize(Reputation _reputation, IERC20 _stakingToken, GenesisProtocol _genesisProtocol)
-    external
-    initializer {
-        reputation = _reputation;
-        stakingToken = _stakingToken;
-        genesisProtocol = _genesisProtocol;
-        Ownable.initialize(address(_genesisProtocol));
-    }
 
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
     external
@@ -58,19 +47,23 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         return _stakingToken.transfer(_beneficiary, _amount);
     }
 
+    function setParameters(uint[11] calldata _params, address _voteOnBehalf) external returns(bytes32) {
+        return genesisProtocol.setParameters(_params, _voteOnBehalf);
+    }
+
     function executeProposal(bytes32 _proposalId, int _decision) external returns(bool) {
         emit LogBytes32(_proposalId);
         emit LogInt(_decision);
         return true;
     }
 
-    function propose(uint256 _numOfChoices, address _proposer)
+    function propose(uint256 _numOfChoices, bytes32 _paramsHash, address, address _proposer, address _organization)
     external
     returns
     (bytes32)
     {
-        bytes32 proposalId = genesisProtocol.propose(_numOfChoices, _proposer);
-        emit NewProposal(proposalId, address(this), _numOfChoices, _proposer);
+        bytes32 proposalId = genesisProtocol.propose(_numOfChoices, _paramsHash, _proposer, _organization);
+        emit NewProposal(proposalId, address(this), _numOfChoices, _proposer, _paramsHash);
         proposalsBlockNumbers[proposalId] = block.number;
 
         return proposalId;
@@ -102,6 +95,18 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
 
     function reputationOf(address _owner, bytes32 _proposalId) external view returns(uint256) {
         return reputation.balanceOfAt(_owner, proposalsBlockNumbers[_proposalId]);
+    }
+
+    /**
+    * @dev initialize
+    */
+    function initialize(Reputation _reputation, IERC20 _stakingToken, GenesisProtocol _genesisProtocol)
+    public
+    initializer {
+        reputation = _reputation;
+        stakingToken = _stakingToken;
+        genesisProtocol = _genesisProtocol;
+        Ownable.initialize(address(_genesisProtocol));
     }
 
 }
