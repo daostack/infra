@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.6.10;
 
 import "../token/ERC827/ERC827Token.sol";// mock class using ERC827 Token
