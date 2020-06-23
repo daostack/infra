@@ -1,32 +1,9 @@
-pragma solidity 0.5.17;
+pragma solidity 0.6.8;
 
 interface IntVoteInterface {
     //When implementing this interface please do not only override function and modifier,
     //but also to keep the modifiers on the overridden functions.
-    modifier onlyProposalOwner(bytes32 _proposalId) {revert(); _;}
-    modifier votable(bytes32 _proposalId) {revert(); _;}
-
-    event NewProposal(
-        bytes32 indexed _proposalId,
-        address indexed _organization,
-        uint256 _numOfChoices,
-        address _proposer,
-        bytes32 _paramsHash
-    );
-
-    event ExecuteProposal(bytes32 indexed _proposalId,
-        address indexed _organization,
-        uint256 _decision,
-        uint256 _totalReputation
-    );
-
-    event VoteProposal(
-        bytes32 indexed _proposalId,
-        address indexed _organization,
-        address indexed _voter,
-        uint256 _vote,
-        uint256 _reputation
-    );
+    modifier votable(bytes32 _proposalId) virtual {revert(); _;}
 
     event CancelProposal(bytes32 indexed _proposalId, address indexed _organization );
     event CancelVoting(bytes32 indexed _proposalId, address indexed _organization, address indexed _voter);
