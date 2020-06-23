@@ -1,4 +1,4 @@
-pragma solidity ^0.6.8;
+pragma solidity ^0.6.10;
 
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";

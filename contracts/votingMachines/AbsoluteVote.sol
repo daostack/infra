@@ -1,4 +1,4 @@
-pragma solidity 0.6.8;
+pragma solidity 0.6.10;
 
 import "../Reputation.sol";
 import "./IntVoteInterface.sol";

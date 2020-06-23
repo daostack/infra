@@ -68,7 +68,7 @@
   },
   "homepage": "https://daostack.io",
   "dependencies": {
-    "ethereumjs-abi": "^0.6.5",
+    "ethereumjs-abi": "^0.6.8",
     "@openzeppelin/contracts-ethereum-package": "3.0.0",
     "web3-utils": "^1.2.8"
   }
