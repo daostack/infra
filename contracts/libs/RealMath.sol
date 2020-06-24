@@ -14,17 +14,17 @@ pragma solidity ^0.6.10;
 
 library RealMath {
 
-    /**
+    /*
      * How many total bits are there?
      */
     uint256 constant private REAL_BITS = 256;
 
-    /**
+    /*
      * How many fractional bits are there?
      */
     uint256 constant private REAL_FBITS = 40;
 
-    /**
+    /*
      * What's the first non-fractional bit
      */
     uint256 constant private REAL_ONE = uint256(1) << REAL_FBITS;
