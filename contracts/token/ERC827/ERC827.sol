@@ -1,4 +1,5 @@
-pragma solidity ^0.5.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
 
@@ -10,14 +11,16 @@ import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol
  * methods to transfer value and data and execute calls in transfers and
  * approvals.
  */
-contract ERC827 is IERC20 {
+// solhint-disable-next-line indent
+abstract contract ERC827 is IERC20 {
 
-    function approveAndCall(address _spender, uint256 _value, bytes memory _data) public payable returns(bool);
+    function approveAndCall(address _spender, uint256 _value, bytes memory _data) public payable virtual returns(bool);
 
-    function transferAndCall(address _to, uint256 _value, bytes memory _data) public payable returns(bool);
+    function transferAndCall(address _to, uint256 _value, bytes memory _data) public payable virtual returns(bool);
 
     function transferFromAndCall(address _from, address _to, uint256 _value, bytes memory _data)
     public
     payable
+    virtual
     returns(bool);
 }

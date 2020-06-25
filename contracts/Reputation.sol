@@ -1,6 +1,7 @@
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.6.10;
 
-import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 
 
 /**
@@ -11,7 +12,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
  * The Reputation contract maintain a map of address to reputation value.
  * It provides an onlyOwner functions to mint and burn reputation _to (or _from) a specific address.
  */
-contract Reputation is Ownable {
+contract Reputation is OwnableUpgradeSafe {
 
     uint8 public decimals = 18;             //Number of decimals of the smallest unit
     // Event indicating minting of reputation to an address.
@@ -73,7 +74,8 @@ contract Reputation is Ownable {
     function initialize(address _owner)
     public
     initializer {
-        Ownable.initialize(_owner);
+        __Ownable_init_unchained();
+        transferOwnership(_owner);
     }
 
     /// @dev This function makes it easy to get the total number of reputation

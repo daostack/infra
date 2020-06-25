@@ -1,14 +1,16 @@
-pragma solidity ^0.5.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.6.10;
 
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/GenesisProtocol.sol";
 import "../Reputation.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 import "./Debug.sol";
 
 
-contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface, ProposalExecuteInterface, Ownable {
+contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
+                                             ProposalExecuteInterface, OwnableUpgradeSafe {
 
     Reputation public reputation;
     IERC20 public stakingToken;
@@ -26,6 +28,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
     external
     onlyOwner
+    override
     returns(bool)
     {
         return reputation.mint(_beneficiary, _amount);
@@ -34,6 +37,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     function burnReputation(uint256 _amount, address _beneficiary, bytes32)
     external
     onlyOwner
+    override
     returns(bool)
     {
         return reputation.burn(_beneficiary, _amount);
@@ -42,6 +46,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
     function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
     external
     onlyOwner
+    override
     returns(bool)
     {
         return _stakingToken.transfer(_beneficiary, _amount);
@@ -51,7 +56,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         return genesisProtocol.setParameters(_params, _voteOnBehalf);
     }
 
-    function executeProposal(bytes32 _proposalId, int _decision) external returns(bool) {
+    function executeProposal(bytes32 _proposalId, int _decision) external override returns(bool) {
         emit LogBytes32(_proposalId);
         emit LogInt(_decision);
         return true;
@@ -81,19 +86,20 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         proposalsBlockNumbers[_proposalId] = block.number;
     }
 
-    function getTotalReputationSupply(bytes32 _proposalId) external view returns(uint256) {
+    function getTotalReputationSupply(bytes32 _proposalId) external view override returns(uint256) {
         return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
     function balanceOfStakingToken(IERC20 _stakingToken, bytes32)
     external
     view
+    override
     returns(uint256)
     {
         return _stakingToken.balanceOf(address(this));
     }
 
-    function reputationOf(address _owner, bytes32 _proposalId) external view returns(uint256) {
+    function reputationOf(address _owner, bytes32 _proposalId) external view override returns(uint256) {
         return reputation.balanceOfAt(_owner, proposalsBlockNumbers[_proposalId]);
     }
 
@@ -106,7 +112,8 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         reputation = _reputation;
         stakingToken = _stakingToken;
         genesisProtocol = _genesisProtocol;
-        Ownable.initialize(address(_genesisProtocol));
+        __Ownable_init_unchained();
+        transferOwnership(address(_genesisProtocol));
     }
 
 }

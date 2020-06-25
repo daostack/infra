@@ -622,6 +622,26 @@ contract('GenesisProtocol', accounts => {
     await checkIsVotable(proposalId,true,testSetup.genesisProtocol);
   });
 
+  it("cannot vote with invalid options", async function() {
+    var testSetup = await setup(accounts);
+
+    var proposalId = await propose(testSetup);
+
+    try {
+      await testSetup.genesisProtocol.vote(proposalId, 3,0,helpers.NULL_ADDRESS);
+      assert(false, "vote was supposed to throw because invalid option was selected");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
+
+    try {
+      await testSetup.genesisProtocol.vote(proposalId, 0,0,helpers.NULL_ADDRESS);
+      assert(false, "vote was supposed to throw because invalid option was selected");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
+  });
+
   it("cannot re vote", async function() {
     var testSetup = await setup(accounts);
 
@@ -663,6 +683,15 @@ contract('GenesisProtocol', accounts => {
 
     try {
       await setup(accounts,helpers.NULL_ADDRESS,-50);
+      assert(false, "setParameters was supposed to throw but didn't.");
+    } catch(error) {
+      helpers.assertVMException(error);
+    }
+  });
+
+  it("Boosted period limit must be larger than or equal to quit ending period", async function() {
+    try {
+      await setup(accounts, helpers.NULL_ADDRESS, 50, 60, 60, 0, 2000, 61);
       assert(false, "setParameters was supposed to throw but didn't.");
     } catch(error) {
       helpers.assertVMException(error);
@@ -1013,6 +1042,16 @@ contract('GenesisProtocol', accounts => {
 
     assert.equal(await stake(testSetup,proposalId,1,0,accounts[0]),"revert");
 
+  });
+
+  it("stake with invalid vote will fail", async () => {
+
+    var testSetup = await setup(accounts);
+
+    var proposalId = await propose(testSetup);
+
+    assert.equal(await stake(testSetup,proposalId,3,10,accounts[0]),"revert");
+    assert.equal(await stake(testSetup,proposalId,0,10,accounts[0]),"revert");
   });
 
   it("stake on boosted proposal is not allowed", async () => {

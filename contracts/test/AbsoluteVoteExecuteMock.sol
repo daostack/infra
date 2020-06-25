@@ -1,14 +1,16 @@
-pragma solidity ^0.5.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.6.10;
 
 import "../votingMachines/ProposalExecuteInterface.sol";
 import "../votingMachines/VotingMachineCallbacksInterface.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 import "./Debug.sol";
 import "../Reputation.sol";
 import "../votingMachines/AbsoluteVote.sol";
 
 
-contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, ProposalExecuteInterface, Ownable {
+contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface,
+                                    ProposalExecuteInterface, OwnableUpgradeSafe {
 
     Reputation public reputation;
     AbsoluteVote public absoluteVote;
@@ -25,6 +27,7 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     function mintReputation(uint256 _amount, address _beneficiary, bytes32)
     external
     onlyOwner
+    override
     returns(bool)
     {
         return reputation.mint(_beneficiary, _amount);
@@ -33,6 +36,7 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     function burnReputation(uint256 _amount, address _beneficiary, bytes32)
     external
     onlyOwner
+    override
     returns(bool)
     {
         return reputation.burn(_beneficiary, _amount);
@@ -41,12 +45,13 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
     external
     onlyOwner
+    override
     returns(bool)
     {
         return _stakingToken.transfer(_beneficiary, _amount);
     }
 
-    function executeProposal(bytes32 _proposalId, int _decision) external returns(bool) {
+    function executeProposal(bytes32 _proposalId, int _decision) external override returns(bool) {
         emit LogBytes32(_proposalId);
         emit LogInt(_decision);
         return true;
@@ -75,17 +80,18 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
         proposalsBlockNumbers[_proposalId] = block.number;
     }
 
-    function getTotalReputationSupply(bytes32 _proposalId) external view returns(uint256) {
+    function getTotalReputationSupply(bytes32 _proposalId) external view override returns(uint256) {
         return reputation.totalSupplyAt(proposalsBlockNumbers[_proposalId]);
     }
 
-    function reputationOf(address _owner, bytes32 _proposalId) external view returns(uint256) {
+    function reputationOf(address _owner, bytes32 _proposalId) external view override returns(uint256) {
         return reputation.balanceOfAt(_owner, proposalsBlockNumbers[_proposalId]);
     }
 
     function balanceOfStakingToken(IERC20 _stakingToken, bytes32)
     external
     view
+    override
     returns(uint256)
     {
         return _stakingToken.balanceOf(address(this));
@@ -99,7 +105,8 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface, Prop
     initializer {
         reputation = _reputation;
         absoluteVote = _absoluteVote;
-        Ownable.initialize(address(_absoluteVote));
+        __Ownable_init_unchained();
+        transferOwnership(address(_absoluteVote));
     }
 
 }

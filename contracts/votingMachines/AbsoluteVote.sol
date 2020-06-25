@@ -1,13 +1,15 @@
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.6.10;
 
 import "../Reputation.sol";
 import "./IntVoteInterface.sol";
+import "./IntVoteInterfaceEvents.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "./VotingMachineCallbacksInterface.sol";
 import "./ProposalExecuteInterface.sol";
 
 
-contract AbsoluteVote is IntVoteInterface {
+contract AbsoluteVote is IntVoteInterfaceEvents, IntVoteInterface {
     using SafeMath for uint;
 
     struct Parameters {
@@ -44,7 +46,7 @@ contract AbsoluteVote is IntVoteInterface {
   /**
    * @dev Check that the proposal is votable (open and not executed yet)
    */
-    modifier votable(bytes32 _proposalId) {
+    modifier votable(bytes32 _proposalId) override {
         require(proposals[_proposalId].open, "proposal is not votable");
         _;
     }
@@ -59,6 +61,7 @@ contract AbsoluteVote is IntVoteInterface {
      */
     function propose(uint256 _numOfChoices, bytes32 _paramsHash, address, address _organization)
         external
+        override
         returns(bytes32)
     {
         // Check valid params and number of choices:
@@ -102,6 +105,7 @@ contract AbsoluteVote is IntVoteInterface {
         address _voter)
         external
         votable(_proposalId)
+        override
         returns(bool)
         {
 
@@ -122,7 +126,7 @@ contract AbsoluteVote is IntVoteInterface {
    * and delete the voter from the proposal struct
    * @param _proposalId id of the proposal
    */
-    function cancelVote(bytes32 _proposalId) external votable(_proposalId) {
+    function cancelVote(bytes32 _proposalId) external votable(_proposalId) override {
         cancelVoteInternal(_proposalId, msg.sender);
     }
 
@@ -132,7 +136,7 @@ contract AbsoluteVote is IntVoteInterface {
       * @return bool true - the proposal has been executed
       *              false - otherwise.
      */
-    function execute(bytes32 _proposalId) external votable(_proposalId) returns(bool) {
+    function execute(bytes32 _proposalId) external votable(_proposalId) virtual returns(bool) {
         return _execute(_proposalId);
     }
 
@@ -142,7 +146,7 @@ contract AbsoluteVote is IntVoteInterface {
    * @param _proposalId the ID of the proposal
    * @return uint256 that contains number of choices
    */
-    function getNumberOfChoices(bytes32 _proposalId) external view returns(uint256) {
+    function getNumberOfChoices(bytes32 _proposalId) external view override returns(uint256) {
         return proposals[_proposalId].numOfChoices;
     }
 
@@ -164,7 +168,7 @@ contract AbsoluteVote is IntVoteInterface {
      * @param _choice the index in the
      * @return voted reputation for the given choice
      */
-    function voteStatus(bytes32 _proposalId, uint256 _choice) external view returns(uint256) {
+    function voteStatus(bytes32 _proposalId, uint256 _choice) external view override returns(uint256) {
         return proposals[_proposalId].votes[_choice];
     }
 
@@ -173,7 +177,7 @@ contract AbsoluteVote is IntVoteInterface {
       * @param _proposalId the ID of the proposal
       * @return bool true or false
     */
-    function isVotable(bytes32 _proposalId) external view returns(bool) {
+    function isVotable(bytes32 _proposalId) external view override returns(bool) {
         return  proposals[_proposalId].open;
     }
 
@@ -181,7 +185,7 @@ contract AbsoluteVote is IntVoteInterface {
      * @dev isAbstainAllow returns if the voting machine allow abstain (0)
      * @return bool true or false
      */
-    function isAbstainAllow() external pure returns(bool) {
+    function isAbstainAllow() external pure override returns(bool) {
         return true;
     }
 
@@ -190,7 +194,7 @@ contract AbsoluteVote is IntVoteInterface {
      * @return min - minimum number of choices
                max - maximum number of choices
      */
-    function getAllowedRangeOfChoices() external pure returns(uint256 min, uint256 max) {
+    function getAllowedRangeOfChoices() external pure override returns(uint256 min, uint256 max) {
         return (0, MAX_NUM_OF_CHOICES);
     }
 
@@ -237,7 +241,7 @@ contract AbsoluteVote is IntVoteInterface {
       * @return bool true - the proposal has been executed
       *              false - otherwise.
      */
-    function _execute(bytes32 _proposalId) internal votable(_proposalId) returns(bool) {
+    function _execute(bytes32 _proposalId) internal votable(_proposalId) virtual returns(bool) {
         Proposal storage proposal = proposals[_proposalId];
         uint256 totalReputation =
         VotingMachineCallbacksInterface(proposal.callbacks).getTotalReputationSupply(_proposalId);

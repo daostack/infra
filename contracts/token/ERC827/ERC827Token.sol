@@ -1,4 +1,5 @@
-pragma solidity ^0.5.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.6.10;
 
 import "./ERC827.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
@@ -11,8 +12,8 @@ import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol
  * methods to transfer value and data and execute calls in transfers and
  * approvals. Uses OpenZeppelin IERC20.
  */
-contract ERC827Token is ERC20, ERC827 {
-
+contract ERC827Token is ERC20UpgradeSafe, ERC827 {
+  /* solhint-disable reason-string */
   /**
    * @dev Addition to IERC20 token methods. It allows to
    * approve the transfer of value and execute a call with the sent data.
@@ -34,6 +35,7 @@ contract ERC827Token is ERC20, ERC827 {
     )
     public
     payable
+    override
     returns (bool)
     {
         require(_spender != address(this));
@@ -41,7 +43,7 @@ contract ERC827Token is ERC20, ERC827 {
         super.approve(_spender, _value);
 
         // solhint-disable-next-line avoid-call-value
-        (bool success,) = _spender.call.value(msg.value)(_data);
+        (bool success,) = _spender.call{value: msg.value}(_data);
         require(success);
 
         return true;
@@ -62,6 +64,7 @@ contract ERC827Token is ERC20, ERC827 {
     )
     public
     payable
+    override
     returns (bool)
     {
         require(_to != address(this));
@@ -69,7 +72,7 @@ contract ERC827Token is ERC20, ERC827 {
         super.transfer(_to, _value);
 
         // solhint-disable-next-line avoid-call-value
-        (bool success,) = _to.call.value(msg.value)(_data);
+        (bool success,) = _to.call{value: msg.value}(_data);
         require(success);
         return true;
     }
@@ -89,14 +92,14 @@ contract ERC827Token is ERC20, ERC827 {
         uint256 _value,
         bytes memory _data
     )
-    public payable returns (bool)
+    public payable override returns (bool)
     {
         require(_to != address(this));
 
         super.transferFrom(_from, _to, _value);
 
         // solhint-disable-next-line avoid-call-value
-        (bool success,) = _to.call.value(msg.value)(_data);
+        (bool success,) = _to.call{value: msg.value}(_data);
         require(success);
         return true;
     }
@@ -126,7 +129,7 @@ contract ERC827Token is ERC20, ERC827 {
         super.increaseAllowance(_spender, _addedValue);
 
         // solhint-disable-next-line avoid-call-value
-        (bool success,) = _spender.call.value(msg.value)(_data);
+        (bool success,) = _spender.call{value: msg.value}(_data);
         require(success);
 
         return true;
@@ -157,9 +160,10 @@ contract ERC827Token is ERC20, ERC827 {
         super.decreaseAllowance(_spender, _subtractedValue);
 
         // solhint-disable-next-line avoid-call-value
-        (bool success,) = _spender.call.value(msg.value)(_data);
+        (bool success,) = _spender.call{value: msg.value}(_data);
         require(success);
 
         return true;
     }
+  /* solhint-enable reason-string */
 }
