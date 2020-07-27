@@ -560,9 +560,9 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
             proposal.winningVote,
             totalReputation
             );
+            proposal.daoBounty = proposal.daoBountyRemain;
             emit GPExecuteProposal(_proposalId, executionState);
             ProposalExecuteInterface(proposal.callbacks).executeProposal(_proposalId, int(proposal.winningVote));
-            proposal.daoBounty = proposal.daoBountyRemain;
         }
         if (tmpProposal.state != proposal.state) {
             emit StateChange(_proposalId, proposal.state);
