@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 interface IntVoteInterface {
     //When implementing this interface please do not only override function and modifier,
     //but also to keep the modifiers on the overridden functions.
-    modifier votable(bytes32 _proposalId) virtual {revert(); _;}
+    modifier votable(bytes32 _proposalId) virtual {revert("proposal is not votable"); _;}
 
     event CancelProposal(bytes32 indexed _proposalId, address indexed _organization );
     event CancelVoting(bytes32 indexed _proposalId, address indexed _organization, address indexed _voter);
