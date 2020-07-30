@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.10;
+pragma solidity 0.6.12;
 
 interface IntVoteInterface {
     //When implementing this interface please do not only override function and modifier,

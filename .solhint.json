@@ -7,7 +7,7 @@
       "no-simple-event-func-name": "off",
       "two-lines-top-level-separator": "off",
       "mark-callable-contracts": "off",
-      "compiler-version": ["error","^0.6.10"],
+      "compiler-version": ["error","^0.6.12"],
       "reason-string": ["error",{"maxLength":64}]
     }
   }
