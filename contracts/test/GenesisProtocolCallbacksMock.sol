@@ -10,7 +10,7 @@ import "./Debug.sol";
 
 
 contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
-                                             ProposalExecuteInterface, OwnableUpgradeSafe {
+                                            ProposalExecuteInterface, OwnableUpgradeSafe {
 
     Reputation public reputation;
     IERC20 public stakingToken;

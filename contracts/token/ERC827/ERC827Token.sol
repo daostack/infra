@@ -42,8 +42,8 @@ contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
         super.approve(_spender, _value);
 
-        // solhint-disable-next-line avoid-call-value
-        (bool success,) = _spender.call{value: msg.value}(_data);
+        // solhint-disable-next-line avoid-call-value,indent
+        (bool success,) = _spender.call {value: msg.value}(_data);
         require(success);
 
         return true;
@@ -71,8 +71,8 @@ contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
         super.transfer(_to, _value);
 
-        // solhint-disable-next-line avoid-call-value
-        (bool success,) = _to.call{value: msg.value}(_data);
+        // solhint-disable-next-line avoid-call-value,indent
+        (bool success,) = _to.call {value: msg.value}(_data);
         require(success);
         return true;
     }
@@ -98,8 +98,8 @@ contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
         super.transferFrom(_from, _to, _value);
 
-        // solhint-disable-next-line avoid-call-value
-        (bool success,) = _to.call{value: msg.value}(_data);
+        // solhint-disable-next-line avoid-call-value,indent
+        (bool success,) = _to.call {value: msg.value}(_data);
         require(success);
         return true;
     }
@@ -128,8 +128,8 @@ contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
         super.increaseAllowance(_spender, _addedValue);
 
-        // solhint-disable-next-line avoid-call-value
-        (bool success,) = _spender.call{value: msg.value}(_data);
+        // solhint-disable-next-line avoid-call-value,indent
+        (bool success,) = _spender.call {value: msg.value}(_data);
         require(success);
 
         return true;
@@ -159,8 +159,8 @@ contract ERC827Token is ERC20UpgradeSafe, ERC827 {
 
         super.decreaseAllowance(_spender, _subtractedValue);
 
-        // solhint-disable-next-line avoid-call-value
-        (bool success,) = _spender.call{value: msg.value}(_data);
+        // solhint-disable-next-line avoid-call-value,indent
+        (bool success,) = _spender.call {value: msg.value}(_data);
         require(success);
 
         return true;

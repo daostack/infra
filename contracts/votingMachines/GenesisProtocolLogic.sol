@@ -369,7 +369,7 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
             proposal.daoBountyRemain = proposal.daoBountyRemain.sub(potentialAmount);
             require(
             VotingMachineCallbacksInterface(proposal.callbacks)
-            .stakingTokenTransfer(stakingToken, _beneficiary, potentialAmount, _proposalId));
+            .stakingTokenTransfer(stakingToken, _beneficiary, potentialAmount, _proposalId), "transfer token failed");
             redeemedAmount = potentialAmount;
             emit RedeemDaoBounty(_proposalId, organizations[proposal.organizationId], _beneficiary, redeemedAmount);
         }
@@ -560,9 +560,9 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
             proposal.winningVote,
             totalReputation
             );
+            proposal.daoBounty = proposal.daoBountyRemain;
             emit GPExecuteProposal(_proposalId, executionState);
             ProposalExecuteInterface(proposal.callbacks).executeProposal(_proposalId, int(proposal.winningVote));
-            proposal.daoBounty = proposal.daoBountyRemain;
         }
         if (tmpProposal.state != proposal.state) {
             emit StateChange(_proposalId, proposal.state);
@@ -610,8 +610,9 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
                 "total stakes is too high");
 
         if (_vote == YES) {
-            staker.amount4BountyAndVote = uint256(uint248(staker.amount4BountyAndVote)).add(amount) |
-                                        (_vote<<VOTE_BIT_INDEX);
+            uint256 amount4Bounty = uint256(uint248(staker.amount4BountyAndVote)).add(amount);
+            require(amount4Bounty < PREBOOSTED_BIT_SET, "total stake for staker is too large");
+            staker.amount4BountyAndVote = amount4Bounty | (_vote<<VOTE_BIT_INDEX);
         } else {
             staker.amount4BountyAndVote |= (_vote<<VOTE_BIT_INDEX);
         }

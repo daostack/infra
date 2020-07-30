@@ -1,6 +1,6 @@
 {
   "name": "@daostack/infra-experimental",
-  "version": "0.1.1-rc.20",
+  "version": "0.1.1-rc.21",
   "description": "Base layer DAO's components",
   "files": [
     "contracts/",
