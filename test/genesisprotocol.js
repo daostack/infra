@@ -1393,7 +1393,7 @@ contract('GenesisProtocol', accounts => {
       assert.equal(await testSetup.org.reputation.balanceOf(accounts[0]),testSetup.reputationArray[0] + totalRep - loss);
     });
 
-    it("reputation flow for successful NO voter", async () => {
+    it("reputation flow for successful NO voter on none expired in q proposal", async () => {
       var staker = accounts[2];
       var testSetup = await setup(accounts);
 
