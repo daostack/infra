@@ -6,7 +6,7 @@ git checkout origin/arc-hive
 echo "npm install ..."
 npm i
 echo "buidler compile ..."
-npm buidler clean
+npx buidler clean
 npx buidler compile
 # publish npm
 echo "Publishing to npm..."
