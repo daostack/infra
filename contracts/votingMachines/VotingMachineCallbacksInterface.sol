@@ -4,9 +4,6 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 
 interface VotingMachineCallbacksInterface {
-    function mintReputation(uint256 _amount, address _beneficiary, bytes32 _proposalId) external returns(bool);
-    function burnReputation(uint256 _amount, address _owner, bytes32 _proposalId) external returns(bool);
-
     function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32 _proposalId)
     external
     returns(bool);

@@ -20,8 +20,6 @@ const setupGenesisProtocolParams = async function(
                                             _preBoostedVotePeriodLimit =0,
                                             _thresholdConst=2000,
                                             _quietEndingPeriod=0,
-                                            _proposingRepReward=60,
-                                            _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
                                             _daoBountyConst=1000,
                                             _activationTime=0,
@@ -33,8 +31,6 @@ const setupGenesisProtocolParams = async function(
                                                           _preBoostedVotePeriodLimit,
                                                           _thresholdConst,
                                                           _quietEndingPeriod,
-                                                          _proposingRepReward,
-                                                          _votersReputationLossRatio,
                                                           _minimumDaoBounty,
                                                           _daoBountyConst,
                                                           _activationTime],
@@ -45,8 +41,6 @@ const setupGenesisProtocolParams = async function(
                                                           _preBoostedVotePeriodLimit,
                                                           _thresholdConst,
                                                           _quietEndingPeriod,
-                                                          _proposingRepReward,
-                                                          _votersReputationLossRatio,
                                                           _minimumDaoBounty,
                                                           _daoBountyConst,
                                                           _activationTime],
@@ -62,8 +56,6 @@ const setup = async function (accounts,
                               _preBoostedVotePeriodLimit =0,
                               _thresholdConst=2000,
                               _quietEndingPeriod=0,
-                              _proposingRepReward=60,
-                              _votersReputationLossRatio=10,
                               _minimumDaoBounty=15,
                               _daoBountyConst=1000,
                               _activationTime=0) {
@@ -95,8 +87,6 @@ const setup = async function (accounts,
                                                                      _preBoostedVotePeriodLimit,
                                                                      _thresholdConst,
                                                                      _quietEndingPeriod,
-                                                                     _proposingRepReward,
-                                                                     _votersReputationLossRatio,
                                                                      _minimumDaoBounty,
                                                                      _daoBountyConst,
                                                                      _activationTime);
@@ -111,7 +101,8 @@ const setup = async function (accounts,
 const proposalStateIndex = 2;
 const boostedState = 5;
 const preBoostedState = 4;
-const proposalTotalStakesIndex = 9;
+const proposalTotalStakesIndex = 8;
+const proposalDaoBountyIndex = 7;
 const numberOfChoices = 2;
 const checkProposalInfo = async function(proposalId, _proposalInfo,_times,genesisProtocol) {
   let proposalInfo = await genesisProtocol.proposals(proposalId);
@@ -124,22 +115,20 @@ const checkProposalInfo = async function(proposalId, _proposalInfo,_times,genesi
   assert.equal(proposalInfo[2], _proposalInfo[2]);
     // uint winningVote
   assert.equal(proposalInfo[3], _proposalInfo[3]);
-  //address proposer
-  assert.equal(proposalInfo[4], _proposalInfo[4]);
     //uint currentBoostedVotePeriodLimit
-  assert.equal(proposalInfo[5], _proposalInfo[5]);
+  assert.equal(proposalInfo[4], _proposalInfo[4]);
   //bytes32 paramsHash
-  assert.equal(proposalInfo[6], _proposalInfo[6]);
+  assert.equal(proposalInfo[5], _proposalInfo[5]);
   //uint daoBountyRemain
-  assert.equal(proposalInfo[7], _proposalInfo[7]);
+  assert.equal(proposalInfo[6], _proposalInfo[6]);
   //uint daoBounty
-  assert.equal(proposalInfo[8], _proposalInfo[8]);
+  assert.equal(proposalInfo[7], _proposalInfo[7]);
   //int totalStakes
-  assert.equal(proposalInfo[9], _proposalInfo[9]);
+  assert.equal(proposalInfo[8], _proposalInfo[8]);
   //int threshold
-  assert.equal(proposalInfo[10], _proposalInfo[10]);
+  assert.equal(proposalInfo[9], _proposalInfo[9]);
   //uint secondsFromTimeOutTillExecuteBoosted
-  assert.equal(proposalInfo[11], _proposalInfo[11]);
+  assert.equal(proposalInfo[10], _proposalInfo[10]);
   // - the mapping and array are simply not returned at all in the array
   checkProposalTimes(proposalId,_times,genesisProtocol);
 
@@ -325,7 +314,6 @@ contract('GenesisProtocol', accounts => {
                                           testSetup.genesisProtocolCallbacks.address,
                                           state,
                                           winningVote,
-                                          accounts[0],
                                           currentBoostedVotePeriodLimit,
                                           testSetup.genesisProtocolParams.paramsHash,
                                           daoBountyRemain,
@@ -359,7 +347,6 @@ contract('GenesisProtocol', accounts => {
                                             testSetup.genesisProtocolCallbacks.address,
                                             state,
                                             winningVote,
-                                            accounts[0],
                                             currentBoostedVotePeriodLimit,
                                             testSetup.genesisProtocolParams.paramsHash,
                                             daoBountyRemain,
@@ -385,7 +372,6 @@ contract('GenesisProtocol', accounts => {
                                             testSetup.genesisProtocolCallbacks.address,
                                             state,
                                             winningVote,
-                                            accounts[0],
                                             currentBoostedVotePeriodLimit,
                                             testSetup.genesisProtocolParams.paramsHash,
                                             daoBountyRemain,
@@ -403,7 +389,6 @@ contract('GenesisProtocol', accounts => {
 
   it("check organization params validity", async function() {
     var queuedVoteRequiredPercentage = 0;
-    var votersReputationLossRatio = 1;
     var thresholdConst = 2000;
 
     try {
@@ -436,8 +421,6 @@ contract('GenesisProtocol', accounts => {
         0,//_preBoostedVotePeriodLimit
         thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
-        60,//_proposingRepReward
-        0,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         1//_daoBountyConst
         );
@@ -447,27 +430,7 @@ contract('GenesisProtocol', accounts => {
     }
 
     queuedVoteRequiredPercentage = 100;
-    votersReputationLossRatio = 101;
 
-    try {
-      await setup(accounts,helpers.NULL_ADDRESS,
-        queuedVoteRequiredPercentage,
-        60,//_queuedVotePeriodLimit
-        60,//_boostedVotePeriodLimit
-        0,//_preBoostedVotePeriodLimit
-        thresholdConst,//_thresholdConst
-        20,//_quietEndingPeriod
-        60,//_proposingRepReward
-        votersReputationLossRatio,//_votersReputationLossRatio
-        1,//_minimumDaoBounty
-        1//_daoBountyConst
-      );
-      assert(false, " votersReputationLossRatio <=100    ");
-    } catch(error) {
-      helpers.assertVMException(error);
-    }
-
-    votersReputationLossRatio = 100;
     thresholdConst = 0;
 
     try {
@@ -478,8 +441,6 @@ contract('GenesisProtocol', accounts => {
         0,//_preBoostedVotePeriodLimit
         thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
-        60,//_proposingRepReward
-        votersReputationLossRatio,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         1//_daoBountyConst
         );
@@ -497,8 +458,6 @@ contract('GenesisProtocol', accounts => {
         0,//_preBoostedVotePeriodLimit
         thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
-        60,//_proposingRepReward
-        votersReputationLossRatio,//_votersReputationLossRatio
         1,//_minimumDaoBounty
         0//_daoBountyConst
         );
@@ -515,8 +474,6 @@ contract('GenesisProtocol', accounts => {
         0,//_preBoostedVotePeriodLimit
         thresholdConst,//_thresholdConst
         20,//_quietEndingPeriod
-        60,//_proposingRepReward
-        votersReputationLossRatio,//_votersReputationLossRatio
         0,//_minimumDaoBounty
         1//_daoBountyConst
         );
@@ -734,7 +691,6 @@ contract('GenesisProtocol', accounts => {
                                           testSetup.genesisProtocolCallbacks.address,
                                           state,
                                           winningVote,
-                                          accounts[0],
                                           currentBoostedVotePeriodLimit,
                                           testSetup.genesisProtocolParams.paramsHash,
                                           daoBountyRemain,
@@ -1015,7 +971,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(staker[1],20);
 
     let proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[9],20); //totalStakes + dao downstake
+    assert.equal(proposalInfo[8],20); //totalStakes + dao downstake
   });
 
   it("stake without approval - fail", async () => {
@@ -1079,7 +1035,7 @@ contract('GenesisProtocol', accounts => {
 
   it("boost proposal", async () => {
     var thresholdConst = 1700; //1.7
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConst,0,60,10,2);
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,thresholdConst,0,2);
     var proposalId = await propose(testSetup);
     //shift proposal to boosted phase
     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
@@ -1242,10 +1198,7 @@ contract('GenesisProtocol', accounts => {
   it("redeem ", async () => {
 
     var testSetup = await setup(accounts);
-
     var proposalId = await propose(testSetup);
-
-
     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
     assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
     var accounts0Balance = await testSetup.stakingToken.balanceOf(accounts[0]);
@@ -1253,16 +1206,16 @@ contract('GenesisProtocol', accounts => {
     await helpers.increaseTime(61);
     await testSetup.genesisProtocol.execute(proposalId);
     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[8],15);
+    assert.equal(proposalInfo[proposalDaoBountyIndex],15);
     var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-    var redeemToken = redeemRewards[0].toNumber();
+    var redeemToken = redeemRewards.toNumber();
     assert.equal(redeemToken,((100+15-15)*100)/100);
     assert.equal(await testSetup.stakingToken.balanceOf(accounts[0]),accounts0Balance-100);
-    assert.equal(proposalInfo[9],100);
+    assert.equal(proposalInfo[8],100);
     var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-    assert.equal(proposalInfo[9],0);
-    assert.equal(tx.logs.length,2);
+    assert.equal(proposalInfo[8],0);
+    assert.equal(tx.logs.length,1);
     assert.equal(tx.logs[0].event, "Redeem");
     assert.equal(tx.logs[0].args._proposalId, proposalId);
     assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
@@ -1324,98 +1277,6 @@ contract('GenesisProtocol', accounts => {
       await testSetup.genesisProtocol.execute(proposalId);
       assert.equal(await testSetup.genesisProtocol.orgBoostedProposalsCnt(organizationId),1);
       assert.equal(await threshold(testSetup),thresholdConst);
-    });
-
-    it("reputation flow ", async () => {
-      var voterY = accounts[0];
-      var voterN = accounts[1];
-      var proposer = accounts[2];
-      var staker = accounts[2];
-
-
-      var votersReputationLossRatio=20;
-      var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,votersReputationLossRatio,15,10);
-      var totalRepSupply = await testSetup.org.reputation.totalSupply();
-      var proposalId = await propose(testSetup,proposer);
-
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:voterY});
-      await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS,{from:voterN});
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-      await testSetup.stakingToken.transfer(staker,500,{from:accounts[0]});
-      var balanceOfVoterY = await testSetup.stakingToken.balanceOf(voterY);
-      await stake(testSetup,proposalId,YES,100,staker);
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,voterY);
-      var redeemToken = redeemRewards[0].toNumber();
-      var redeemReputation = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
-      var repVoterY = testSetup.reputationArray[0];
-      var repVoterN = testSetup.reputationArray[1];
-      var lostReputation = (repVoterN * votersReputationLossRatio)/100;
-      var voterYRepDeposit = (repVoterY * votersReputationLossRatio)/100;
-      assert.equal(redeemReputation,Math.round(voterYRepDeposit + (repVoterY *lostReputation)/ repVoterY));
-      assert.equal(redeemToken,0);
-      var tx = await testSetup.genesisProtocol.redeem(proposalId,voterY);
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "RedeemReputation");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, voterY);
-      assert.equal(tx.logs[0].args._amount, redeemReputation);
-      assert.equal(balanceOfVoterY.eq(await testSetup.stakingToken.balanceOf(voterY)),true);
-      assert.equal(await testSetup.org.reputation.balanceOf(voterY),Math.round(repVoterY+(repVoterY *lostReputation)/ repVoterY));
-      //check rep sum zero
-      assert.equal(totalRepSupply.toNumber(), (await testSetup.org.reputation.totalSupply()).toNumber());
-
-
-    });
-
-    it("reputation flow for unsuccessful voting", async () => {
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-
-      await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-      var balanceOfAccounts0 = await testSetup.stakingToken.balanceOf(accounts[0]);
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-      var totalRep = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
-      var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "RedeemReputation");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
-      //var totalRep =  rep4Stake.toNumber() + rep4Vote.toNumber() + rep4Propose.toNumber();
-      assert.equal(tx.logs[0].args._amount, totalRep);
-      assert.equal(balanceOfAccounts0.eq(await testSetup.stakingToken.balanceOf(accounts[0])),true);
-      var loss = (10*testSetup.reputationArray[0])/100;  //votersReputationLossRatio
-      assert.equal(await testSetup.org.reputation.balanceOf(accounts[0]),testSetup.reputationArray[0] + totalRep - loss);
-    });
-
-    it("reputation flow for successful NO voter on none expired in q proposal", async () => {
-      var staker = accounts[2];
-      var testSetup = await setup(accounts);
-
-      var proposalId = await propose(testSetup);
-
-      await testSetup.genesisProtocol.vote(proposalId,NO,0,helpers.NULL_ADDRESS);
-      assert.equal(await testSetup.genesisProtocol.shouldBoost(proposalId),false);
-
-      await testSetup.stakingToken.transfer(staker,500,{from:accounts[0]});
-      await stake(testSetup,proposalId,YES,100,staker);
-      await helpers.increaseTime(61);
-      await testSetup.genesisProtocol.execute(proposalId);
-      var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-      var totalRep = redeemRewards[1].toNumber() + redeemRewards[2].toNumber();
-      var tx = await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
-      assert.equal(tx.logs.length, 1);
-      assert.equal(tx.logs[0].event, "RedeemReputation");
-      assert.equal(tx.logs[0].args._proposalId, proposalId);
-      assert.equal(tx.logs[0].args._beneficiary, accounts[0]);
-      assert.equal(tx.logs[0].args._amount, totalRep);
-      var loss = (10*testSetup.reputationArray[0])/100;  //votersReputationLossRatio
-      assert.equal(await testSetup.org.reputation.balanceOf(accounts[0]),testSetup.reputationArray[0] + totalRep - loss);
     });
 
     it("quite window ", async () => {
@@ -1524,7 +1385,7 @@ contract('GenesisProtocol', accounts => {
       var stakerRedeemAmountBaunty = redeemRewards[0];
       var potentialAmount = redeemRewards[1];
       var proposalInfo =  await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(potentialAmount.eq(proposalInfo[8]),true);
+      assert.equal(potentialAmount.eq(proposalInfo[proposalDaoBountyIndex]),true);
       //'there is no tokens on the dao for bounty'
       assert.equal(stakerRedeemAmountBaunty,0);
       //send tokens to org avatar
@@ -1646,13 +1507,13 @@ contract('GenesisProtocol', accounts => {
 
       await testSetup.genesisProtocol.execute(proposalId);
       var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[8],15);
+      assert.equal(proposalInfo[proposalDaoBountyIndex],15);
 
       var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,testSetup.genesisProtocolCallbacks.address);
-      var redeemToken = redeemRewards[0].toNumber();
+      var redeemToken = redeemRewards.toNumber();
       var tx = await testSetup.genesisProtocol.redeem(proposalId,testSetup.genesisProtocolCallbacks.address);
       proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
-      assert.equal(proposalInfo[9],0);
+      assert.equal(proposalInfo[proposalTotalStakesIndex],0);
       assert.equal(tx.logs.length,1);
       assert.equal(tx.logs[0].event, "Redeem");
       assert.equal(tx.logs[0].args._proposalId, proposalId);
@@ -1705,7 +1566,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
 
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-    assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
+    assert.equal(proposalInfo[9],Math.pow(2,REAL_FBITS));//check proposal own threshold
     await stake(testSetup,proposalId,NO,200,accounts[1]); //downstake ...
     proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
     assert.equal(proposalInfo[proposalStateIndex],3);   //state back to q
@@ -1728,7 +1589,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(proposalInfo[proposalTotalStakesIndex],50); //totalStakes
 
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-    assert.equal(proposalInfo[10],Math.pow(2,REAL_FBITS));//check proposal own threshold
+    assert.equal(proposalInfo[9],Math.pow(2,REAL_FBITS));//check proposal own threshold
 
     //boost 2 proposals
     let proposalIdTemp;
@@ -1768,7 +1629,7 @@ contract('GenesisProtocol', accounts => {
     var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
     assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
     assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
-    assert.equal(proposalInfo[10],3*Math.pow(2,REAL_FBITS));//check proposal own threshold
+    assert.equal(proposalInfo[9],3*Math.pow(2,REAL_FBITS));//check proposal own threshold
 
     assert.equal(await score(testSetup,proposalId),(100/15).toFixed(2));
     assert.equal(await threshold(testSetup),3);
@@ -1835,7 +1696,7 @@ contract('GenesisProtocol', accounts => {
   it("executeBoosted", async () => {
 
     var minimumDaoBounty = await web3.utils.toWei("0.1");
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,1,minimumDaoBounty,10);
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,minimumDaoBounty,10);
 
     var proposalId = await propose(testSetup);
     await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS);
@@ -1862,8 +1723,7 @@ contract('GenesisProtocol', accounts => {
     assert.equal(tx.logs[3].args._proposalId, proposalId);
     assert.equal(tx.logs[3].args._beneficiary, accounts[0]);
     assert.equal(tx.logs[3].args._amount.toString(), expectedBounty);
-    var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-    var redeemToken = redeemRewards[0];
+    var redeemToken = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
     var daoBounty =  new web3.utils.BN(minimumDaoBounty);
     var totalStakes = (new web3.utils.BN(userStake)).add(daoBounty);
     var totalStakesLeftAfterCallBounty = totalStakes.sub(new web3.utils.BN(expectedBounty));
@@ -1905,7 +1765,7 @@ contract('GenesisProtocol', accounts => {
   it("executeBoosted check NO stake", async () => {
 
     var minimumDaoBounty = web3.utils.toWei("1");
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,1,minimumDaoBounty,10);
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,minimumDaoBounty,10);
     var proposalId = await propose(testSetup);
     var user1Stake = web3.utils.toWei("1");
     var user2Stake = web3.utils.toWei("4");
@@ -1955,7 +1815,7 @@ contract('GenesisProtocol', accounts => {
   var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
   assert.equal(proposalInfo.state,1);//expieredInQue
   var redeemRewards = await testSetup.genesisProtocol.redeem.call(proposalId,accounts[0]);
-  var redeemToken = redeemRewards[0].toNumber();
+  var redeemToken = redeemRewards.toNumber();
   assert.equal(redeemToken,10);
   await testSetup.genesisProtocol.redeem(proposalId,accounts[0]);
   assert.equal((await testSetup.stakingToken.balanceOf(accounts[0])).toString(),accounts0Balance.toString());
@@ -1963,7 +1823,7 @@ contract('GenesisProtocol', accounts => {
 
   it("activation time", async () => {
     var activationTime = (await web3.eth.getBlock("latest")).timestamp + 1000;
-    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,60,10,15,10,activationTime);
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,0,2000,0,15,10,activationTime);
 
     try {
            await propose(testSetup);

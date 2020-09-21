@@ -25,24 +25,6 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         bytes32 _paramsHash
     );
 
-    function mintReputation(uint256 _amount, address _beneficiary, bytes32)
-    external
-    onlyOwner
-    override
-    returns(bool)
-    {
-        return reputation.mint(_beneficiary, _amount);
-    }
-
-    function burnReputation(uint256 _amount, address _beneficiary, bytes32)
-    external
-    onlyOwner
-    override
-    returns(bool)
-    {
-        return reputation.burn(_beneficiary, _amount);
-    }
-
     function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
     external
     onlyOwner
@@ -52,7 +34,7 @@ contract GenesisProtocolCallbacksMock is Debug, VotingMachineCallbacksInterface,
         return _stakingToken.transfer(_beneficiary, _amount);
     }
 
-    function setParameters(uint[11] calldata _params, address _voteOnBehalf) external returns(bytes32) {
+    function setParameters(uint[9] calldata _params, address _voteOnBehalf) external returns(bytes32) {
         return genesisProtocol.setParameters(_params, _voteOnBehalf);
     }
 

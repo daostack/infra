@@ -16,8 +16,6 @@ const setupGenesisProtocol = async function (accounts,_voteOnBehalf = helpers.NU
                                               _preBoostedVotePeriodLimit =0,
                                               _thresholdConst=1500,
                                               _quietEndingPeriod=0,
-                                              _proposingRepReward=60,
-                                              _votersReputationLossRatio=10,
                                               _minimumDaoBounty=15,
                                               _daoBountyConst=10,
                                               _activationTime=0) {
@@ -50,8 +48,6 @@ const setupGenesisProtocol = async function (accounts,_voteOnBehalf = helpers.NU
                                          _preBoostedVotePeriodLimit,
                                          _thresholdConst,
                                          _quietEndingPeriod,
-                                         _proposingRepReward,
-                                         _votersReputationLossRatio,
                                          _minimumDaoBounty,
                                          _daoBountyConst,
                                          _activationTime);
@@ -75,8 +71,6 @@ const setupGenesisProtocolParams = async function(
                                             _preBoostedVotePeriodLimit =0,
                                             _thresholdConst=1500,
                                             _quietEndingPeriod=0,
-                                            _proposingRepReward=60,
-                                            _votersReputationLossRatio=10,
                                             _minimumDaoBounty=15,
                                             _daoBountyConst=10,
                                             _activationTime=0
@@ -88,8 +82,6 @@ const setupGenesisProtocolParams = async function(
                                                           _preBoostedVotePeriodLimit,
                                                           _thresholdConst,
                                                           _quietEndingPeriod,
-                                                          _proposingRepReward,
-                                                          _votersReputationLossRatio,
                                                           _minimumDaoBounty,
                                                           _daoBountyConst,
                                                          _activationTime],voteOnBehalf);
@@ -99,8 +91,6 @@ const setupGenesisProtocolParams = async function(
                                                           _preBoostedVotePeriodLimit,
                                                           _thresholdConst,
                                                           _quietEndingPeriod,
-                                                          _proposingRepReward,
-                                                          _votersReputationLossRatio,
                                                           _minimumDaoBounty,
                                                           _daoBountyConst,
                                                           _activationTime],voteOnBehalf);
