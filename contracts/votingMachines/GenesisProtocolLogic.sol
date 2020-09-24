@@ -36,9 +36,8 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
         uint256 limitExponentValue;// an upper limit for numberOfBoostedProposals
                                    //in the threshold calculation to prevent overflow
         uint256 quietEndingPeriod; //quite ending period
-        uint256 proposingRepReward;//proposer reputation reward.
-        uint256 votersReputationLossRatio;//Unsuccessful pre booster
-                                          //voters lose votersReputationLossRatio% of their reputation.
+        uint256 proposingRepReward;//deprecated
+        uint256 votersReputationLossRatio;//deprecated
         uint256 minimumDaoBounty;
         uint256 daoBountyConst;//The DAO downstake for each proposal is calculate according to the formula
                                //(daoBountyConst * averageBoostDownstakes)/100 .
@@ -65,7 +64,7 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
         address callbacks;    // should fulfill voting callbacks interface.
         ProposalState state;
         uint256 winningVote; //the winning vote.
-        address proposer;
+        address proposer; //deprecated - will not be set
         //the proposal boosted period limit . it is updated for the case of quiteWindow mode.
         uint256 currentBoostedVotePeriodLimit;
         bytes32 paramsHash;
@@ -80,8 +79,6 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
         bool daoRedeemItsWinnings;
         //      vote      reputation
         mapping(uint256   =>  uint256    ) votes;
-        //      vote      reputation
-        mapping(uint256   =>  uint256    ) preBoostedVotes;
         // a mapping between address and voterBitmap
         // voterBitmap : bits 0-127 the voter reputation.
         //               bits 247 indicate if the vote was during regular or preBoosted state.
@@ -112,10 +109,11 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
         uint256 _amount
     );
 
+    //this event definition is here to maintain subgraph competability
     event RedeemReputation(bytes32 indexed _proposalId,
-        address indexed _organization,
-        address indexed _beneficiary,
-        uint256 _amount
+            address indexed _organization,
+            address indexed _beneficiary,
+            uint256 _amount
     );
 
     event StateChange(bytes32 indexed _proposalId, ProposalState _proposalState);
@@ -192,8 +190,8 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
      *                  state (stable) before boosted.
      *    _params[4] -_thresholdConst
      *    _params[5] -_quietEndingPeriod
-     *    _params[6] -_proposingRepReward
-     *    _params[7] -_votersReputationLossRatio
+     *    _params[6] - deprected - set to 0
+     *    _params[7] -deprected - set to 0
      *    _params[8] -_minimumDaoBounty
      *    _params[9] -_daoBountyConst
      *    _params[10] -_activationTime
@@ -208,7 +206,6 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
     {
         require(_params[0] <= 100 && _params[0] >= 50, "50 <= queuedVoteRequiredPercentage <= 100");
         require(_params[4] <= 16000 && _params[4] > 1000, "1000 < thresholdConst <= 16000");
-        require(_params[7] <= 100, "votersReputationLossRatio <= 100");
         require(_params[2] >= _params[5], "boostedVotePeriodLimit >= quietEndingPeriod");
         require(_params[8] > 0, "minimumDaoBounty should be > 0");
         require(_params[9] > 0, "daoBountyConst should be > 0");
@@ -233,8 +230,8 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
             thresholdConst:uint216(_params[4]).fraction(uint216(1000)),
             limitExponentValue:limitExponent,
             quietEndingPeriod: _params[5],
-            proposingRepReward: _params[6],
-            votersReputationLossRatio:_params[7],
+            proposingRepReward: 0,
+            votersReputationLossRatio: 0,
             minimumDaoBounty:_params[8],
             daoBountyConst:_params[9],
             activationTime:_params[10],
@@ -254,12 +251,11 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
      *           [1] voterReputationReward
      *           [2] proposerReputationReward
      */
-     // solhint-disable-next-line function-max-lines,code-complexity
+     // solhint-disable-next-line code-complexity
     function redeem(bytes32 _proposalId, address _beneficiary) public returns (uint[3] memory rewards) {
         Proposal storage proposal = proposals[_proposalId];
         require((proposal.state == ProposalState.Executed)||(proposal.state == ProposalState.ExpiredInQueue),
         "Proposal should be Executed or ExpiredInQueue");
-        Parameters memory params = parameters[proposal.paramsHash];
         //as staker
         Staker storage staker = proposal.stakers[_beneficiary];
         uint256 totalWinningStakes = proposal.stakes[proposal.winningVote];
@@ -292,48 +288,10 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
             .sub(proposal.daoBounty);
             proposal.daoRedeemItsWinnings = true;
         }
-
-        //as voter
-        uint256 voter = proposal.voters[_beneficiary];
-        uint256 voterReputation = uint256(uint128(voter));
-        bool voterPreBoosted = (voter >> PREBOOSTED_BIT_INDEX & 1 == 1);
-        uint8 voterVote = uint8(voter >> VOTE_BIT_INDEX);
-        if ((voterReputation != 0) && (voterPreBoosted)) {
-            if (proposal.state == ProposalState.ExpiredInQueue) {
-              //give back reputation for the voter
-                rewards[1] = ((voterReputation.mul(params.votersReputationLossRatio))/100);
-            } else if (proposal.winningVote == voterVote) {
-                uint256 lostReputation;
-                if (proposal.winningVote == YES) {
-                    lostReputation = proposal.preBoostedVotes[NO];
-                } else {
-                    lostReputation = proposal.preBoostedVotes[YES];
-                }
-                lostReputation = (lostReputation.mul(params.votersReputationLossRatio))/100;
-                rewards[1] = ((voterReputation.mul(params.votersReputationLossRatio))/100)
-                .add((voterReputation.mul(lostReputation))/proposal.preBoostedVotes[proposal.winningVote]);
-            }
-            proposal.voters[_beneficiary] = 0;
-        }
-        //as proposer
-        if ((proposal.proposer == _beneficiary)&&(proposal.winningVote == YES)&&(proposal.proposer != address(0))) {
-            rewards[2] = params.proposingRepReward;
-            proposal.proposer = address(0);
-        }
         if (rewards[0] != 0) {
             proposal.totalStakes = proposal.totalStakes.sub(rewards[0]);
             require(stakingToken.transfer(_beneficiary, rewards[0]), "transfer to beneficiary failed");
             emit Redeem(_proposalId, organizations[proposal.organizationId], _beneficiary, rewards[0]);
-        }
-        if (rewards[1].add(rewards[2]) != 0) {
-            VotingMachineCallbacksInterface(proposal.callbacks)
-            .mintReputation(rewards[1].add(rewards[2]), _beneficiary, _proposalId);
-            emit RedeemReputation(
-            _proposalId,
-            organizations[proposal.organizationId],
-            _beneficiary,
-            rewards[1].add(rewards[2])
-            );
         }
     }
 
@@ -438,8 +396,8 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
                 _params[3],
                 _params[4],
                 _params[5],
-                _params[6],
-                _params[7],
+                uint256(0),
+                uint256(0),
                 _params[8],
                 _params[9],
                 _params[10])
@@ -649,7 +607,6 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
         // solhint-disable-next-line not-rely-on-time
         proposal.times[0] = now;//submitted time
         proposal.currentBoostedVotePeriodLimit = parameters[_paramsHash].boostedVotePeriodLimit;
-        proposal.proposer = _proposer;
         proposal.winningVote = NO;
         proposal.paramsHash = _paramsHash;
         if (organizations[proposal.organizationId] == address(0)) {
@@ -730,11 +687,6 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
             voter = voter | PREBOOSTED_BIT_SET;
         }
         proposal.voters[_voter] = voter;
-        if ((proposal.state == ProposalState.PreBoosted) || (proposal.state == ProposalState.Queued)) {
-            proposal.preBoostedVotes[_vote] = rep.add(proposal.preBoostedVotes[_vote]);
-            uint256 reputationDeposit = (params.votersReputationLossRatio.mul(rep))/100;
-            VotingMachineCallbacksInterface(proposal.callbacks).burnReputation(reputationDeposit, _voter, _proposalId);
-        }
         emit VoteProposal(_proposalId, organizations[proposal.organizationId], _voter, _vote, rep);
         return _execute(_proposalId);
     }

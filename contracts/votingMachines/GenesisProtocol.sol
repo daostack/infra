@@ -8,6 +8,7 @@ import "./GenesisProtocolLogic.sol";
 
 /**
  * @title GenesisProtocol implementation -an organization's voting machine scheme.
+ * Note : Reputation flow is deprected
  */
 contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     using ECDSA for bytes32;
@@ -224,15 +225,15 @@ contract GenesisProtocol is IntVoteInterface, GenesisProtocolLogic {
     /**
     * @dev proposalStatus return the total votes and stakes for a given proposal
     * @param _proposalId the ID of the proposal
-    * @return uint256 preBoostedVotes YES
-    * @return uint256 preBoostedVotes NO
+    * @return uint256 votes YES
+    * @return uint256 votes NO
     * @return uint256 total stakes YES
     * @return uint256 total stakes NO
     */
     function proposalStatus(bytes32 _proposalId) external view returns(uint256, uint256, uint256, uint256) {
         return (
-                proposals[_proposalId].preBoostedVotes[YES],
-                proposals[_proposalId].preBoostedVotes[NO],
+                proposals[_proposalId].votes[YES],
+                proposals[_proposalId].votes[NO],
                 proposals[_proposalId].stakes[YES],
                 proposals[_proposalId].stakes[NO]
         );
