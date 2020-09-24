@@ -24,24 +24,6 @@ contract AbsoluteVoteExecuteMock is Debug, VotingMachineCallbacksInterface,
         bytes32 _paramsHash
     );
 
-    function mintReputation(uint256 _amount, address _beneficiary, bytes32)
-    external
-    onlyOwner
-    override
-    returns(bool)
-    {
-        return reputation.mint(_beneficiary, _amount);
-    }
-
-    function burnReputation(uint256 _amount, address _beneficiary, bytes32)
-    external
-    onlyOwner
-    override
-    returns(bool)
-    {
-        return reputation.burn(_beneficiary, _amount);
-    }
-
     function stakingTokenTransfer(IERC20 _stakingToken, address _beneficiary, uint256 _amount, bytes32)
     external
     onlyOwner
