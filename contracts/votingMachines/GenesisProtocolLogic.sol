@@ -109,6 +109,13 @@ contract GenesisProtocolLogic is IntVoteInterfaceEvents {
         uint256 _amount
     );
 
+    //this event definition is here to maintain subgraph competability
+    event RedeemReputation(bytes32 indexed _proposalId,
+            address indexed _organization,
+            address indexed _beneficiary,
+            uint256 _amount
+    );
+
     event StateChange(bytes32 indexed _proposalId, ProposalState _proposalState);
     event GPExecuteProposal(bytes32 indexed _proposalId, ExecutionState _executionState);
     event ExpirationCallBounty(bytes32 indexed _proposalId, address indexed _beneficiary, uint256 _amount);
