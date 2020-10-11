@@ -642,6 +642,18 @@ contract('GenesisProtocol', accounts => {
 
   it("Non-existent parameters hash shouldn't work - propose with wrong organization", async function() {
     var testSetup = await setup(accounts);
+    await testSetup.genesisProtocolCallbacks.setParameters([50,
+                                                            60,
+                                                            60,
+                                                            0,
+                                                            2000,
+                                                            0,
+                                                            60,
+                                                            10,
+                                                            15,
+                                                            1000,
+                                                            0],
+                                                   helpers.NULL_ADDRESS);
     await testSetup.genesisProtocolCallbacks.propose(2, testSetup.genesisProtocolParams.paramsHash,helpers.NULL_ADDRESS,accounts[0],helpers.NULL_ADDRESS);
 
     try {
@@ -667,6 +679,7 @@ contract('GenesisProtocol', accounts => {
     } catch(error) {
       helpers.assertVMException(error);
     }
+
   });
 
   it("Boosted period limit must be larger than or equal to quit ending period", async function() {
