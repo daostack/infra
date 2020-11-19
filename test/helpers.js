@@ -14,24 +14,6 @@ class TestSetup {
   }
 }
 
-class VotingMachine {
-  constructor() {
-  }
-}
-
-class Organization {
-  constructor() {
-  }
-}
-
-function getProposalAddress(tx) {
-    // helper function that returns a proposal object from the ProposalCreated event
-    // in the logs of tx
-    assert.equal(tx.logs[0].event, 'ProposalCreated');
-    const proposalAddress = tx.logs[0].args.proposaladdress;
-    return proposalAddress;
-}
-
 function getValueFromLogs(tx, arg, eventName, index=0) {
   /**
    *
@@ -99,26 +81,12 @@ async function getOrganization(tx,contract,eventName) {
   return organization;
 }
 
-async function getProposal(tx) {
-    return await Proposal.at(getProposalAddress(tx));
-}
-
 async function etherForEveryone() {
     // give all web3.eth.accounts some ether
     let accounts = web3.eth.accounts;
     for (let i=0; i < 10; i++) {
         await web3.eth.sendTransaction({to: accounts[i], from: accounts[0], value: web3.toWei(0.1, "ether")});
     }
-}
-
-const outOfGasMessage = 'VM Exception while processing transaction: out of gas';
-
-function assertJumpOrOutOfGas(error) {
-    let condition = (
-        error.message === outOfGasMessage ||
-        error.message.search('invalid JUMP') > -1
-    );
-    assert.isTrue(condition, 'Expected an out-of-gas error or an invalid JUMP error, got this instead: ' + error.message);
 }
 
 function assertVMException(error) {
@@ -133,10 +101,6 @@ function assertInternalFunctionException(error) {
         error.message.search('is not a function') > -1
     );
     assert.isTrue(condition, 'Expected a function not found Exception, got this instead:' + error.message);
-}
-
-function assertJump(error) {
-  assert.isAbove(error.message.search('invalid JUMP'), -1, 'Invalid JUMP error must be returned' + error.message);
 }
 
 const checkVoteInfo = async function(absoluteVote,proposalId, voterAddress, _voteInfo) {
