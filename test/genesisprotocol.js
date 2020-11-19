@@ -1,6 +1,5 @@
 const helpers = require('./helpers');
 const constants = require('./constants');
-import { getValueFromLogs } from './helpers';
 const GenesisProtocol = artifacts.require("./GenesisProtocol.sol");
 const ERC827TokenMock = artifacts.require('./test/ERC827TokenMock.sol');
 const GenesisProtocolCallbacks = artifacts.require("./GenesisProtocolCallbacksMock.sol");
@@ -8,7 +7,7 @@ var ethereumjs = require('ethereumjs-abi');
 const Reputation = artifacts.require("./Reputation.sol");
 const BigNumber = require('bignumber.js');
 
-export class GenesisProtocolParams {
+class GenesisProtocolParams {
   constructor() {
   }
 }
@@ -70,7 +69,8 @@ const setup = async function (accounts,
                               _daoBountyConst=1000,
                               _activationTime=0) {
    var testSetup = new helpers.TestSetup();
-   testSetup.stakingToken = await ERC827TokenMock.new(accounts[0],web3.utils.toWei(((new BigNumber(2)).pow(200)).toString(10)));
+   let initBalance = ((new BigNumber(2)).toPower(200)).toString(10);
+   testSetup.stakingToken = await ERC827TokenMock.new(accounts[0], initBalance);
    testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
    testSetup.reputationArray = [200, 100, 700 ];
    testSetup.org = {};
@@ -187,7 +187,7 @@ const propose = async function(_testSetup,_proposer = 0) {
                                                                 _testSetup.genesisProtocolCallbacks.address,
                                                                 _proposer,
                                                                  helpers.NULL_ADDRESS);
-      const proposalId = await getValueFromLogs(tx, '_proposalId');
+      const proposalId = await helpers.getValueFromLogs(tx, '_proposalId');
       assert.equal(tx.logs.length, 2);
       assert.equal(tx.logs[0].event, "NewProposal");
       assert.equal(tx.logs[0].args._proposalId, proposalId);
@@ -227,7 +227,7 @@ const stake = async function(_testSetup,_proposalId,_vote,_amount,_staker,eventN
    signature = subSignature+'1c';
  }
   const encodeABI = await new web3.eth.Contract(_testSetup.genesisProtocol.abi).methods.stakeWithSignature(_proposalId,_vote,_amount,nonce,signatureType,signature).encodeABI();
-
+ 
   const transaction = await _testSetup.stakingToken.approveAndCall(
     _testSetup.genesisProtocol.address, _amount, encodeABI ,{from : _staker}
   );
@@ -589,7 +589,7 @@ contract('GenesisProtocol', accounts => {
 
     testSetup = await setup(accounts);
     var tx = await testSetup.genesisProtocolCallbacks.propose(2, testSetup.genesisProtocolParams.paramsHash,helpers.NULL_ADDRESS,accounts[0],helpers.NULL_ADDRESS);
-    proposalId = await getValueFromLogs(tx, '_proposalId');
+    proposalId = await helpers.getValueFromLogs(tx, '_proposalId');
 
     // Option 2
     await testSetup.genesisProtocol.vote(proposalId, 2,0,helpers.NULL_ADDRESS);
@@ -654,7 +654,7 @@ contract('GenesisProtocol', accounts => {
     }
 
     try {
-      await setup(accounts,helpers.NULL_ADDRESS,-50);
+      await setup(accounts,helpers.NULL_ADDRESS,0);
       assert(false, "setParameters was supposed to throw but didn't.");
     } catch(error) {
       helpers.assertVMException(error);
@@ -727,14 +727,6 @@ contract('GenesisProtocol', accounts => {
     try {
       await testSetup.genesisProtocolCallbacks.propose(3, helpers.NULL_HASH, testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
       assert(false, 'Tried to create a proposal with 3 options - max is 2');
-    } catch (ex) {
-      helpers.assertVMException(ex);
-    }
-
-    // -5 options - exception should be raised
-    try {
-      await testSetup.genesisProtocolCallbacks.propose(-5, helpers.NULL_HASH, testSetup.genesisProtocolCallbacks.address,accounts[0],helpers.NULL_ADDRESS);
-      assert(false, 'Tried to create an absolute vote with negative number of options');
     } catch (ex) {
       helpers.assertVMException(ex);
     }
@@ -1554,7 +1546,7 @@ contract('GenesisProtocol', accounts => {
       assert.equal(tx.logs.length, 1);
       assert.equal(tx.logs[0].event, "NewProposal");
       assert.equal(tx.logs[0].args._organization,accounts[1]);
-      var proposalId = await getValueFromLogs(tx, '_proposalId');
+      var proposalId = await helpers.getValueFromLogs(tx, '_proposalId');
       var proposal = await testSetup.genesisProtocol.proposals(proposalId);
       assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[0],accounts[1]));
 
@@ -1563,7 +1555,7 @@ contract('GenesisProtocol', accounts => {
       assert.equal(tx.logs.length, 1);
       assert.equal(tx.logs[0].event, "NewProposal");
       assert.equal(tx.logs[0].args._organization,accounts[1]);
-      proposalId = await getValueFromLogs(tx, '_proposalId');
+      proposalId = await helpers.getValueFromLogs(tx, '_proposalId');
       proposal = await testSetup.genesisProtocol.proposals(proposalId);
       assert.equal(proposal[0],await web3.utils.soliditySha3(accounts[1],accounts[1]));
   });
