@@ -1,6 +1,6 @@
 {
   "name": "@daostack/infra",
-  "version": "0.0.1-rc.20",
+  "version": "0.0.1-rc.21",
   "description": "Base layer DAO's components",
   "files": [
     "contracts/",
@@ -69,7 +69,7 @@
   "homepage": "https://daostack.io",
   "dependencies": {
     "ethereumjs-abi": "^0.6.8",
-    "openzeppelin-solidity": "2.5.0",
+    "openzeppelin-solidity": "2.5.1",
     "web3-utils": "^1.2.8"
   }
 }
