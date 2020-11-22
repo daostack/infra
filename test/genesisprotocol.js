@@ -1247,6 +1247,27 @@ contract('GenesisProtocol', accounts => {
   assert.equal((await testSetup.stakingToken.balanceOf(accounts[0])).toString(),accounts0Balance.toString());
 });
 
+it("preboost bar crossed  ", async () => {
+
+    var preBoostedVotePeriodLimit = 60;
+    var testSetup = await setup(accounts,helpers.NULL_ADDRESS,50,60,60,preBoostedVotePeriodLimit);
+    var proposalId = await propose(testSetup);
+
+    await stake(testSetup,proposalId,YES,100,accounts[0]);
+
+    var proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalTotalStakesIndex],100); //totalStakes
+
+    assert.equal(proposalInfo[proposalStateIndex],preBoostedState);   //state pre boosted
+
+    var tx = await testSetup.genesisProtocol.vote(proposalId,YES,0,helpers.NULL_ADDRESS,{from:accounts[2]});
+
+    proposalInfo = await testSetup.genesisProtocol.proposals(proposalId);
+    assert.equal(proposalInfo[proposalStateIndex],2);   //state boosted
+    assert.equal(tx.logs[2].event, "GPExecuteProposal");
+    assert.equal(tx.logs[2].args._executionState, 3);
+  });
+
   it("redeem without execution should revert", async () => {
 
     var testSetup = await setup(accounts);
