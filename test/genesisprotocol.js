@@ -1,5 +1,4 @@
 const helpers = require('./helpers');
-const constants = require('./constants');
 const GenesisProtocol = artifacts.require("./GenesisProtocol.sol");
 const ERC827TokenMock = artifacts.require('./test/ERC827TokenMock.sol');
 const GenesisProtocolCallbacks = artifacts.require("./GenesisProtocolCallbacksMock.sol");
@@ -71,7 +70,7 @@ const setup = async function (accounts,
    var testSetup = new helpers.TestSetup();
    let initBalance = ((new BigNumber(2)).toPower(200)).toString(10);
    testSetup.stakingToken = await ERC827TokenMock.new(accounts[0], initBalance);
-   testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address,{gas:constants.GAS_LIMIT});
+   testSetup.genesisProtocol = await GenesisProtocol.new(testSetup.stakingToken.address);
    testSetup.reputationArray = [200, 100, 700 ];
    testSetup.org = {};
    //let reputationMinimeTokenFactory = await ReputationMinimeTokenFactory.new();
