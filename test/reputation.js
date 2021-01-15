@@ -10,7 +10,7 @@ contract('Reputation', accounts => {
     await reputation.initialize(accounts[0]);
    });
    it("test getting correct decimals", async () => {
-        assert.equal((await reputation.decimals()).valueOf(), 18);
+        assert.equal((await reputation.decimals()), 18);
     }); 
    it("test setting and getting reputation by the owner", async () => {
         let value;
