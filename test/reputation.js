@@ -9,7 +9,10 @@ contract('Reputation', accounts => {
     reputation = await Reputation.new();
     await reputation.initialize(accounts[0]);
    });
-    it("test setting and getting reputation by the owner", async () => {
+   it("test getting correct decimals", async () => {
+        assert.equal((await reputation.decimals()), 18);
+    }); 
+   it("test setting and getting reputation by the owner", async () => {
         let value;
         await reputation.mint(accounts[1], 3131);
 

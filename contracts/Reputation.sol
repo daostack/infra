@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
  */
 contract Reputation is OwnableUpgradeSafe {
 
-    uint8 public decimals = 18;             //Number of decimals of the smallest unit
+    uint8 constant public decimals = 18;             //Number of decimals of the smallest unit
     // Event indicating minting of reputation to an address.
     event Mint(address indexed _to, uint256 _amount);
     // Event indicating burning of reputation for an address.
