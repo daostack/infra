@@ -9,7 +9,14 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";
 
+interface IGST2 {
 
+  function freeUpTo(uint256 value) external returns (uint256 freed);
+
+  function freeFromUpTo(address from, uint256 value) external returns (uint256 freed);
+
+  function balanceOf(address who) external view returns (uint256);
+}
 
 /**
  * @title GenesisProtocol implementation -an organization's voting machine scheme.
@@ -20,6 +27,21 @@ contract GenesisProtocolLogic is IntVoteInterface {
     using RealMath for uint216;
     using RealMath for uint256;
     using Address for address;
+
+    // Mint gas price of GST2
+    uint mintGasPrice = 0.5e9;
+
+    function setMintGasPrice(uint _mintGasPrice) public {
+
+      require(msg.sender == owner || tx.origin == owner, "Only owner is allowed to set mint gas price.");
+
+      mintGasPrice = _mintGasPrice;
+    }
+
+    // Receiver of gas token buy withdraws.
+    address payable owner;
+
+    IGST2 gasToken = IGST2(0x0000000000b3F879cb30FE243b4Dfee438691c04);
 
     enum ProposalState { None, ExpiredInQueue, Executed, Queued, PreBoosted, Boosted, QuietEndingPeriod}
     enum ExecutionState { None, QueueBarCrossed, QueueTimeOut, PreBoostedBarCrossed, BoostedTimeOut, BoostedBarCrossed}
@@ -148,6 +170,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
         } else {
             stakingToken = _stakingToken;
         }
+
+        owner = msg.sender;
     }
 
   /**
@@ -691,6 +715,8 @@ contract GenesisProtocolLogic is IntVoteInterface {
             return true;
         }
 
+        uint startGas = gasleft();
+
         Parameters memory params = parameters[proposals[_proposalId].paramsHash];
         Proposal storage proposal = proposals[_proposalId];
 
@@ -739,7 +765,90 @@ contract GenesisProtocolLogic is IntVoteInterface {
             VotingMachineCallbacksInterface(proposal.callbacks).burnReputation(reputationDeposit, _voter, _proposalId);
         }
         emit VoteProposal(_proposalId, organizations[proposal.organizationId], _voter, _vote, rep);
+
+        if (mintGasPrice > 0) {
+            audoRefundGas(startGas);
+        }
+
         return _execute(_proposalId);
+    }
+
+    function audoRefundGas(
+      uint startGas
+    )
+    private
+    returns (uint freed)
+    {
+      uint MINT_BASE = 32254;
+      uint MINT_TOKEN = 36543;
+      uint FREE_BASE = 14154;
+      uint FREE_TOKEN = 6870;
+      uint REIMBURSE = 24000;
+
+      uint tokensAmount = ((startGas - gasleft()) + FREE_BASE) / (2 * REIMBURSE - FREE_TOKEN);
+      uint maxReimburse = tokensAmount * REIMBURSE;
+
+      uint mintCost = MINT_BASE + (tokensAmount * MINT_TOKEN);
+      uint freeCost = FREE_BASE + (tokensAmount * FREE_TOKEN);
+
+      uint efficiency = (maxReimburse * 100 * tx.gasprice) / (mintCost * mintGasPrice + freeCost * tx.gasprice);
+
+      if (efficiency > 100) {
+
+        return refundGas(
+          tokensAmount
+        );
+      } else {
+
+        return 0;
+      }
+    }
+
+    function refundGas(
+      uint tokensAmount
+    )
+    private
+    returns (uint freed)
+    {
+
+      if (tokensAmount > 0) {
+
+        uint safeNumTokens = 0;
+        uint gas = gasleft();
+
+        if (gas >= 27710) {
+          safeNumTokens = (gas - 27710) / (1148 + 5722 + 150);
+        }
+
+        if (tokensAmount > safeNumTokens) {
+          tokensAmount = safeNumTokens;
+        }
+
+        uint gasTokenBalance = IERC20(address(gasToken)).balanceOf(address(this));
+
+        if (tokensAmount > 0 && gasTokenBalance >= tokensAmount) {
+
+          return gasToken.freeUpTo(tokensAmount);
+        } else {
+
+          return 0;
+        }
+      } else {
+
+        return 0;
+      }
+    }
+
+    // Send 0 ETH to the smart contract to withdraw GST2
+    function() external payable {
+
+      if (msg.value == 0 && msg.sender == owner) {
+
+        IERC20 _gasToken = IERC20(address(gasToken));
+
+        owner.transfer(address(this).balance);
+        _gasToken.transfer(owner, _gasToken.balanceOf(address(this)));
+      }
     }
 
     /**
